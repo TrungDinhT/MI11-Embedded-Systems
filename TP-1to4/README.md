@@ -19,7 +19,7 @@ int main(void){
 }
 ```
 
-Nous avons utilisé les utilitaires suivants (penser à les préfixer par `arn-none-eabi-` afin d'obtenir la version dédiée à notre architecture) :
+Nous avons utilisé les utilitaires suivants (penser à les préfixer par `arm-none-eabi-` afin d'obtenir la version dédiée à notre architecture) :
 * 
 * `objdump` (`-ths`)
 * 
@@ -124,7 +124,7 @@ Mais ça n'est pas très joli, utilisons plutôt l'horloge de la cible.
 
 ### Clignotement de la LED (version précise)
 Le fonctionnement du timer sur notre cible est le suivant :
-![schéma](./schema_timer.jpg) 
+![schema](https://lh3.googleusercontent.com/IYVVoljp72jlnXlFu_MVkY_cxJCgCpjlE3s7GLVwy3iornaBGvH3-Dv8ZS8uDjH7tkhMaLxHml63yqs=w1366-h643)
 
 Note : on utilise pas le mode capture qui sert à enregistrer l'état courant de l'horloge à l'arrivée d'un front montant d'un GPIO.
 
@@ -160,3 +160,58 @@ ptr = (unsigned int*)0x00202014;
 ```
 
 Notre LED clignote maintenant à 2Hz !
+
+
+## TD 4
+Pour ce TP, nous voulons pouvoir débrancher et rebrancher la cible et que la LED clignote d'elle même. Ensuite, nous allons utiliser les interruptions pour avoir un timer propre pour notre LED.
+
+### Installation du code en Flash - explications
+Pour la section `.data` par exemple, il va falloir séparer l'adresse du symbole `b` et de la constante `1`.
+```c
+int a;
+int b = 1;
+static int c;
+char * s = "Salut";
+
+int main(void){
+	// Main qui ne quitte pas
+    while(1){
+        c = 42;
+        a = a + b + c + s[1] + f();
+    } 
+}
+```
+mettre à des adresse différentes les adresses des symboles et les adresse des XXX
+-> adresse de chargement (pr cst)
+-> adresse virtuelle (d'exécution = pr variables)
+
+```
+SECTIONS {
+    [...]
+    .data 0x12 : AT(0x12000) 
+    {
+        [...]
+    }
+    [...]
+}
+```
+Dans le script de l'éditeur de lien : 
+VMA -> adresse de b, adresse d'exécution/adresse virtuelle
+LMA -> adresse d contenu de la section, "adresse de chargement"
+
+Il faudra donc copier les valeurs de démarrage pour copier depuis la flash les valeurs initiales des données à l'emplacement où elles sont censées se trouver
+
+Par défaut, l'éditeur de lien suppose que `VMA` et `LMA` valent le location counter `.`.
+
+`ADDR(.data)` donne l'adresse virtuelle du premier octet de la section
+`LOADADDR(.data)` donne l'adresse de chargement de la section
+
+### Installation du code en Flash - code
+
+### Timer par interruption
+On souhaite maintenant que notre programme soit capable de faire autre chose le temps du timer et puisse régir à la fin du timer. On va donc utiliser une exception, générée par le timer lorsque que la comparaison survient. Lorsque le processeur va observer un front montant sur son entrée IRQ, il devra appeler notre fonction gestionnaire d'exception. Pour réaliser tout cela il faut donc :
+* faire une fonction handler d'IRQ dans le C
+* configurer le timer pour qu'il émette des interruptions
+* configurer l'entrée du timer dans le gestionnaire d'exception matériel AITC
+* activer les deux bits utiles du registre CPSR pour que le front montant soit perçu par le processeur ou bien utiliser les macros C `IRQ_enable`/`IRQ_disable`
+* initialiser le pointeur de pile en mode IRQ
