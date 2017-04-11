@@ -2,18 +2,33 @@
 
 ## TP 5
 ### Exercice 1
-**Question 1.1**
-User manual p.10
+**Question 1.1** *Écrivez les caractéristiques de la carte.*
+On trouve ces informations dans le manuel utilisateur p.9 et 10. En plus du processeur et de la mémoire vive ci-dessous, la carte possède les caractéristiques suivantes :
+* Nom : `DevKit8600 evaluation board`
+* Mémoire morte : 512MB NAND Flash + 176KB On-chip boot ROM
+* Périphériques : port LAN, interface entrée/sortie audio, USB OTG, USB HOST, interfaces CAN, RS485, SPI, IIC, ADC, GPMC, JTAG, TF slot, serial port, TFT LCD, écran tactile et clavier.
 
-**Question 1.2**
-* (cours p. 49) boot sur un périphérique bloc std
-    * flash
-    * sd
-* boot dans un ramdisk initial (archive cpio > initrd en ram)
-* boot sur un disque réseau (montage serveur NFS ou appels bootp (p.65) + TFTP p.62)
+*Quelle est la référence du processeur de la carte, quelle est sa fréquence et son architecture ?*
+* Référence : `AM3359 Cortex A8`
+* Fréquence : 720 MHz
+* Architecture : `ARM 32 Bit RISC` (*Reduced Instruction Set Computer*)
 
-**Question 1.3**
-à travers le port série :
+*Quelle est la quantité de mémoire vive sur la carte ?*
+Il y a 512MB de SDRAM en DDR3.
+
+**Question 1.2** *Quelles sont les différentes possibilités pour stocker le noyau et le système de fichiers nécessaires pour démarrer la carte ?*
+* Boot sur un périphérique bloc standard (cours slide 49) :
+    * Flash
+    * Carte SD
+* Boot dans un ramdisk :
+    * Système de fichier chargé en RAM à partir d'une archive cpio
+* Cas particulier du boot sur un disque réseau :
+    * Requête BOOTP (slide 65 du cours) pour connaître son adresse IP et la localisation du noyau.
+    * Appel TFTP (slide 62) pour récupérer le noyau avant de le charger
+    * Montage du système de fichier NFS à partir du réseau
+
+**Question 1.3** *Quelle interface de communication avez-vous utilisé pour vous connecter à la cible ? Donnez les paramètres de connexion.*
+Nous nous sommes connectés à travers le port série grâce à Cutecom :
 * Device: `/dev/ttyS0`
 * Baudrate: `115200`
 * Data bits: `8`
@@ -21,16 +36,15 @@ User manual p.10
 * Open for: `reading` et `writing`
 * Line end: `LF`
 
-
-**Question 1.4**
+**Question 1.4** *Décrivez la séquence de démarrage.*
+*Que se passe-t-il et pourquoi (analysez la configuration sur le PC)?*
 ```
 U-Boot SPL 2011.09-svn (May 22 2012 - 11:19:00)
 Texas Instruments Revision detection unimplemented
 Booting from NAND...
  
- 
 U-Boot 2011.09-svn (May 22 2012 - 11:19:00)
- 
+
 I2C:   ready
 DRAM:  512 MiB
 WARNING: Caches not enabled
@@ -56,9 +70,24 @@ Not retrying...
 Wrong Image Format for bootm command
 ERROR: can't get kernel image!
 ```
-vm qui contient un serveur DHCP -> donne une IP à la cible
+Au lancement, le bootloader initialise la carte (I2C, RAM, réseau) puis essaie de booter depuis le réseau :
+```
+Booting from network
+...
+link up on port 0
+BOOTP broadcast 1
+```
+Notre VM contenant un serveur DHCP et étant relié *via* le switch, elle donne une IP à la cible à son démarrage (lorsqu'elle fait une requête BOOTP):
+```
+DHCP client bound to address 192.168.1.6
+TFTP from server 192.168.1.1; our IP address is 192.168.1.6
+Filename 'uImage'.
+```
 
-/etc/dhcp/dhcpd.conf
+*Quel fichier est manquant et où faudrait-il le mettre ? A quoi sert ce fichier ?*
+Il manque le fichier du noyau `uImage` (`TFTP error: 'File not found'`) qui se doit se trouver dans `/tftpboot`:
+
+`/etc/dhcp/dhcpd.conf` :
 ```
 allow bootp;
 ddns-update-style none;
@@ -69,36 +98,43 @@ subnet 192.168.1.0 netmask 255.255.255.0 {
         option root-path "/tftpboot/rootfs";
 }
 ```
-Manque le fichier uImage (le noyau) qui se doit se trouver dans `/tftpboot/` + manque rootfs (système de fichier)
 
-**Question 1.5**
-Si le fichier était présent, la cible le chargerait grace à TFTP pour le décompresser et booter dessus
-S'il arrivait à charger le fichier, il faudrait encore que la cible trouve le système de fichier sur le serveur NFS (dont la config est vide pour le moment)
+**Question 1.5** *Si le fichier manquant était présent, que se passerait-t-il ensuite ?*
+Si le fichier était présent, la cible chargerait son noyau grace à TFTP pour le décompresser et booter dessus.
+
+*Quel serait le problème suivant ?*
+Il faudrait que la cible trouve le système de fichier sur le serveur NFS. La configuration de celui-ci est correcte sur notre VM mais le dossier contenant le filesystem de la cible (`/tftpboot/rootfs/`) est vide.
 
 ### Exercice 2
-**Question 2.1**
+**Question 2.1** *Analysez brièvement le contenu des dossiers suivants :*
 * `/home/mi11/poky/build/conf` : configuration de poky
     * `bblayers.conf` : configuration des couches
-    * `local.conf` :
-    * `sanity_info` : 
-    * `templateconf.cfg` : 
+    * `local.conf`
+    * `sanity_info`
+    * `templateconf.cfg`
 * `/home/mi11/devkit8600/meta-devkit8600` : couche spécifique à la cible pour poky
-    * `conf` :
-    * `recipes-core` :
-    * `recipes-extra` :
-    * `recipes-kernel` : contient un script pour récupérer une image linux depuis le SVN de l'UTC
-    * `recipes-support` :
-    * `recipes-xenomai` :
+    * `conf`
+    * `recipes-core`
+    * `recipes-extra`
+    * `recipes-kernel` : contient un script pour que Poky récupère une image linux depuis le SVN de l'UTC
+    * `recipes-support`
+    * `recipes-xenomai`
 
-**Question 2.2**
+Nous n'avons pas eu le temps d'étudier plus en détail le contenu de ces dossier.
+
+**Question 2.2** *Qu'avez vous changé dans les fichiers de configuration afin de supporter la devkit8600 ?*
 * `/home/mi11/poky/build/conf/bblayers.conf` : ajout du bblayer de notre devkit `/home/mi11/devkit8600/meta-devkit8600`
-* `/home/mi11/poky/build/conf/local.conf` : changer la machine pour laquelle poky va compiler `devkit8600` (même nom que `~/devkit8600/meta-devkit8600/conf/machine/devkit8600.conf`
+* `/home/mi11/poky/build/conf/local.conf` : changer la machine pour laquelle poky va compiler en `devkit8600` (même nom que `~/devkit8600/meta-devkit8600/conf/machine/devkit8600.conf`)
 
+On a ensuite pu compiler avec les commandes suivantes :
+```sh
+cd /home/mi11/poky
+source ../poky-dizzy-12.0.3/oe-init-build-env
+bitbake core-image-base
+```
 
-On compile `bitbake core-image-base`
-
-**Question 2.3**
-ubi* : image mémoire flash pour la cible
+**Question 2.3** *Analysez le résultat de la compilation se trouvant dans le répertoire `/home/mi11/poky/build/tmp/deploy/images`.*
+`ls -lah`:
 ```
 total 78M
 drwxr-xr-x 2 mi11 mi11 4,0K avril 10 18:29 .
@@ -119,7 +155,20 @@ lrwxrwxrwx 1 mi11 mi11   46 avril 10 18:20 uImage -> uImage--3.1.0-r0-devkit8600
 -rw-r--r-- 1 mi11 mi11 3,1M avril 10 18:20 uImage--3.1.0-r0-devkit8600-20170410161127.bin
 lrwxrwxrwx 1 mi11 mi11   46 avril 10 18:20 uImage-devkit8600.bin -> uImage--3.1.0-r0-devkit8600-20170410161127.bin
 ```
+*Quels sont les différents fichiers, à quoi servent-ils ?*
+* `*.ubi` : image mémoire flash pour la cible (non utilisées ici)
+* `*.tar.bz2` : archive contenant le système de fichier de la cible
+* `uImage` et `*.bin` : noyau Linux exécutable par la cible
 
+*Quelle est la taille des fichiers générés ? Comparez avec ceux de votre VM sous Linux Mint. Pourquoi y a t-il une différence ?*
+Le noyau pèse ici 3,1Mo et le système de fichier 29Mo, ce qui est très faible comparé à un système classique (~1Go). La différence s'explique par le fait que notre noyau ne contient que le strict nécessaire à notre cible et que le système de fichier n'inclu que le strict minimum des programmes.
+
+Ensuite, nous compilons et installons la chaîne de compilation croisée :
+```
+bitbake meta-toolchain
+cd /home/mi11/poky/build/tmp/deploy/sdk
+sudo ./poky-glibc-x86_64-meta-toolchain-armv7a-vfp-neon-toolchain-1.7.3.sh
+```
 
 ### Exercice 3
 **Question 3.1**
