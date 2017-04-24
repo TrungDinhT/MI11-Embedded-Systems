@@ -1,5 +1,5 @@
 # Exercice 1: Hello Word
-On a créé fichier main.c
+On a créé notre fichier main.c, puis on le compile:
 
 ```
 gcc main.c -o main
@@ -10,15 +10,16 @@ gcc main.c -o main
 file main
 main: ELF 64-bit LSB  executable, x86-64, version 1 (SYSV), dynamically linked (uses shared libs), for GNU/Linux 2.6.24, BuildID[sha1]=467d07238021bd56c90ae0d41f6a489ccd874689, not stripped
 ```
+On constate alors que la compilation a été effectuée pour notre ordinateur de travail (x86-64) et non pas la cible embarquée sous ARM.
 
 Cross-compilez maintenant votre programme avec la commande suivante :
 ```
 arm-poky-linux-gnueabi-gcc main.c -o main
 ```
--- >mais ne fonctionne pas
+Cependant cette ligne de commande ne fonctionne pas dans un premier temps car nous n'utilisons pas le script fourni avec la chaîne de compilation croisée.
 
 #### Question 1.2 : Que faut-il faire avant de pouvoir lancer cette commande ?
-il faut faire:
+il faut donc sourcer le script et faire un unset sur LDFLAGS pour s'assurer que le comportement du linker n'est pas changé:
 ```
 source /opt/poky/1.7.3/environment-setup-armv7a-vfp-neon-poky-linux-gnueabi
 unset LDFLAGS
@@ -32,6 +33,8 @@ Vérifiez ensuite le bon fonctionnement sur la cible.
 file main
 main: ELF 32-bit LSB executable, ARM, EABI5 version 1 (SYSV), dynamically linked (uses shared libs), for GNU/Linux 2.6.32, BuildID[sha1]=b17d26ffaef10e5340617cd2f0c7ce088fe0d6d6, not stripped
 ```
+On constate alors que cette fois ci la compilation a bien été effectuée pour un processeur ARM.
+
 on le copie sur la cible:
 ```
 scp main root@192.168.1.6:/home/root/
@@ -52,6 +55,10 @@ int main () {
     return 1;
 }
 ```
+Terminal:
+```
+Hello World
+```
 
 # Exercice 2 : Clignotement des LEDs
 
@@ -63,12 +70,13 @@ LEDs système et utilisateur.
 #### Question 2.1 : Rappelez comment accéder aux LEDs en manipulant des fichiers.
 Dans le terminal, affichez les valeurs de ces fichiers et modifiez-les.
 
-Depuis notre cible, on va modifier le fichier brightness dans différents dossiers en fonction de l'opérateur:
+Sur notre cible, on va modifier le fichier brightness des différents dossiers suivants:
 
 `/sys/class/leds/user_led/brightness ` (LED Utilisateur)
 ou
 `/sys/class/leds/sys_led/brightness` (LED Système)
 
+On affiche les valeurs initiales puis on les changent à 1, les deux LEDs vertes s'allument:
 ```
 cat /sys/class/leds/user_led/brightness
 0
@@ -132,6 +140,7 @@ on le compile puis le copie sur la cible pour ensuite l'exécuter en ssh, on s'a
 ```
 arm-poky-linux-gnueabi-gcc led.c -o led
 scp led root@192.168.1.6:/home/root/
+
 ./led
 ```
 
@@ -149,7 +158,7 @@ Nous y accèdons à travers le fichier `/dev/input/event1` qui interface le GPIO
 
 Faites un essai de lecture de l'état des boutons en ligne de commande.
 #### Question 3.2 : Donnez les commandes utilisées. Quelles sont les valeurs des différents événements ?
-Nous pouvons tester leur fonctionnement grâce à l'utilitaire `evtest`, qui afficher le contenu du fichier `event1` (manual p.73):
+Nous pouvons tester leur fonctionnement grâce à l'utilitaire `evtest`, qui affiche le contenu du fichier `event1` (manual p.73):
 ```
 evtest /dev/input/event1
 ```
@@ -184,7 +193,8 @@ Event: time 1492183104.913305, -------------- SYN_REPORT ------------
 
 
 Écrivez maintenant un programme réagissant aux actions sur les boutons, en affichant un message et/ou allumant une LED par exemple. Pour cela, vous devez stocker le résultat de la lecture du fichier dans une structure de type input_event, qui contiendra donc les informations liées à l’événement d'une touche.
-#### Question 3.3 : Faites une recherche dans la cross-toolchain pour trouver où est déclarée la struct input_event. 
+#### Question 3.3 : Faites une recherche dans la cross-toolchain pour trouver où est déclarée la struct input_event.
+Notre recherche:
 ```
 grep -r "input_event" /opt/poky/1.7.3/
 /opt/poky/1.7.3/sysroots/armv7a-vfp-neon-poky-linux-gnueabi/usr/include/linux/input.h:struct input_event { ...
