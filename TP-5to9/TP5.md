@@ -1,8 +1,8 @@
-# MI11 - Rapport TP 5 à 9
+# MI11 - Rapport TP 5
 
-## TP 5
 ### Exercice 1
 **Question 1.1** *Écrivez les caractéristiques de la carte.*
+
 On trouve ces informations dans le manuel utilisateur p.9 et 10. En plus du processeur et de la mémoire vive ci-dessous, la carte possède les caractéristiques suivantes :
 * Nom : `DevKit8600 evaluation board`
 * Mémoire morte : 512MB NAND Flash + 176KB On-chip boot ROM
@@ -17,6 +17,7 @@ On trouve ces informations dans le manuel utilisateur p.9 et 10. En plus du proc
 Il y a 512MB de SDRAM en DDR3.
 
 **Question 1.2** *Quelles sont les différentes possibilités pour stocker le noyau et le système de fichiers nécessaires pour démarrer la carte ?*
+
 * Boot sur un périphérique bloc standard (cours slide 49) :
     * Flash
     * Carte SD
@@ -28,6 +29,7 @@ Il y a 512MB de SDRAM en DDR3.
     * Montage du système de fichier NFS à partir du réseau
 
 **Question 1.3** *Quelle interface de communication avez-vous utilisé pour vous connecter à la cible ? Donnez les paramètres de connexion.*
+
 Nous nous sommes connectés à travers le port série grâce à Cutecom :
 * Device: `/dev/ttyS0`
 * Baudrate: `115200`
@@ -37,7 +39,7 @@ Nous nous sommes connectés à travers le port série grâce à Cutecom :
 * Line end: `LF`
 
 **Question 1.4** *Décrivez la séquence de démarrage.*
-*Que se passe-t-il et pourquoi (analysez la configuration sur le PC)?*
+
 ```
 U-Boot SPL 2011.09-svn (May 22 2012 - 11:19:00)
 Texas Instruments Revision detection unimplemented
@@ -70,6 +72,9 @@ Not retrying...
 Wrong Image Format for bootm command
 ERROR: can't get kernel image!
 ```
+
+*Que se passe-t-il et pourquoi (analysez la configuration sur le PC)?*
+
 Au lancement, le bootloader initialise la carte (I2C, RAM, réseau) puis essaie de booter depuis le réseau :
 ```
 Booting from network
@@ -85,6 +90,7 @@ Filename 'uImage'.
 ```
 
 *Quel fichier est manquant et où faudrait-il le mettre ? A quoi sert ce fichier ?*
+
 Il manque le fichier du noyau `uImage` (`TFTP error: 'File not found'`) qui se doit se trouver dans `/tftpboot`:
 
 `/etc/dhcp/dhcpd.conf` :
@@ -100,13 +106,16 @@ subnet 192.168.1.0 netmask 255.255.255.0 {
 ```
 
 **Question 1.5** *Si le fichier manquant était présent, que se passerait-t-il ensuite ?*
+
 Si le fichier était présent, la cible chargerait son noyau grace à TFTP pour le décompresser et booter dessus.
 
 *Quel serait le problème suivant ?*
+
 Il faudrait que la cible trouve le système de fichier sur le serveur NFS. La configuration de celui-ci est correcte sur notre VM mais le dossier contenant le filesystem de la cible (`/tftpboot/rootfs/`) est vide.
 
 ### Exercice 2
 **Question 2.1** *Analysez brièvement le contenu des dossiers suivants :*
+
 * `/home/mi11/poky/build/conf` : configuration de poky
     * `bblayers.conf` : configuration des couches
     * `local.conf`
@@ -123,6 +132,7 @@ Il faudrait que la cible trouve le système de fichier sur le serveur NFS. La co
 Nous n'avons pas eu le temps d'étudier plus en détail le contenu de ces dossier.
 
 **Question 2.2** *Qu'avez vous changé dans les fichiers de configuration afin de supporter la devkit8600 ?*
+
 * `/home/mi11/poky/build/conf/bblayers.conf` : ajout du bblayer de notre devkit `/home/mi11/devkit8600/meta-devkit8600`
 * `/home/mi11/poky/build/conf/local.conf` : changer la machine pour laquelle poky va compiler en `devkit8600` (même nom que `~/devkit8600/meta-devkit8600/conf/machine/devkit8600.conf`)
 
@@ -134,6 +144,7 @@ bitbake core-image-base
 ```
 
 **Question 2.3** *Analysez le résultat de la compilation se trouvant dans le répertoire `/home/mi11/poky/build/tmp/deploy/images`.*
+
 `ls -lah`:
 ```
 total 78M
@@ -156,11 +167,13 @@ lrwxrwxrwx 1 mi11 mi11   46 avril 10 18:20 uImage -> uImage--3.1.0-r0-devkit8600
 lrwxrwxrwx 1 mi11 mi11   46 avril 10 18:20 uImage-devkit8600.bin -> uImage--3.1.0-r0-devkit8600-20170410161127.bin
 ```
 *Quels sont les différents fichiers, à quoi servent-ils ?*
+
 * `*.ubi` : image mémoire flash pour la cible (non utilisées ici)
 * `*.tar.bz2` : archive contenant le système de fichier de la cible
 * `uImage` et `*.bin` : noyau Linux exécutable par la cible
 
 *Quelle est la taille des fichiers générés ? Comparez avec ceux de votre VM sous Linux Mint. Pourquoi y a t-il une différence ?*
+
 Le noyau pèse ici 3,1Mo et le système de fichier 29Mo, ce qui est très faible comparé à un système classique (~1Go). La différence s'explique par le fait que notre noyau ne contient que le strict nécessaire à notre cible et que le système de fichier n'inclu que le strict minimum des programmes.
 
 Ensuite, nous compilons et installons la chaîne de compilation croisée :
@@ -171,12 +184,15 @@ sudo ./poky-glibc-x86_64-meta-toolchain-armv7a-vfp-neon-toolchain-1.7.3.sh
 ```
 
 ### Exercice 3
-**Question 3.1**
-- mettre uImage dans /tftpboot/
+**Question 3.1** *Compte tenu de l'exercice 1, que faut-t-il faire pour démarrer sur le noyau et le système de fichiers que vous avez générés ?*
+
+Il faut  :
+- mettre l'`uImage` dans `/tftpboot/`
 - extraire `core-image-base-devkit8600.tar.bz2` dans /tftpboot/rootfs
 
-**Question 3.2**
-```
+**Question 3.2** *Décrivez le processus de boot complet de la cible.*
+
+```none
 U-Boot SPL 2011.09-svn (May 22 2012 - 11:19:00)
 Texas Instruments Revision detection unimplemented
 Booting from NAND...
@@ -498,13 +514,28 @@ Starting Linux NFC daemon
 Poky (Yocto Project Reference Distro) 1.7.3 devkit8600 /dev/ttyO0
 ```
 
-**Question 3.3**
-192.168.1.6
-réponse à la reuqête bootp + IP-Config au boot
+*Quelles sont les applications démarrées et dans quel ordre ?*
+
+- téléchargement du noyau à l'adresse mémoire `0x82000000`
+- vérification et lancement du noyau
+- vérification du système et lancement de la console
+- paramétrage du matériel (mémoire, GPIO, Bluetooth, USB, NAND)
+- envoi d'une requête DHCP, récupération de la même adresse IP, paramétrage de l'interface réseau et du serveur SSH
+
+
+**Question 3.3** *Quelle est l'ip de la cible ? Comment l'avez vous trouvée ?*
+
+Son IP est `192.168.1.6` car on connaît la réponse à la requête BOOTP au démarrage de la cible (et à la requête DHCP au lancement de Linux) :
+```
+DHCP client bound to address 192.168.1.6
+```
 
 **Question 3.4**
-*Que contient le fichier /proc/devices ?*
+
+*Que contient le fichier `/proc/devices` ?*
+
 ```
+cat /proc/devices
 Character devices:
   1 mem
   4 /dev/vc/0
@@ -553,17 +584,27 @@ Block devices:
 135 sd
 179 mmc
 ```
-*Quelle est la différence entre les 2 sections que l'on trouve dans ce fichier ?*
-char -> composant de communication
-bloc -> espace de stockage
 
-*Identifiez le périphérique correspondant au port série, mettez le en évidence dans le fichier /proc/devices et affichez la(es) ligne(s) correspondantes dans le dossier /dev.*
+*Quelle est la différence entre les 2 sections que l'on trouve dans ce fichier ?*
+
+- `Character devices` : composants de communication
+- `Block devices` : espaces de stockage
+
+*Identifiez le périphérique correspondant au port série, mettez le en évidence dans le fichier `/proc/devices` et affichez la(es) ligne(s) correspondantes dans le dossier /dev.*
+
+Le port série correspond à :
+```
 /dev/console
 /dev/ttyO0
 ```
-root@devkit8600:~# cat /proc/cmdline 
+car
+`cat /proc/cmdline` :
+``` 
 console=ttyO0,115200n8 ip=dhcp noinitrd root=/dev/nfs rw rootwait
-root@devkit8600:~# cat /etc/inittab 
+```
+
+`cat /etc/inittab` :
+``` 
 # /etc/inittab: init(8) configuration.
 # $Id: inittab,v 1.91 2002/01/25 13:35:21 miquels Exp $
 
@@ -608,11 +649,15 @@ O0:12345:respawn:/sbin/getty -L 115200 ttyO0
 ```
 
 *A quoi correspond le numéro que l'on trouve en début de ligne dans le fichier /proc/devices ?*
-c'est le majeur (cf cours)
+Ce numéro correspond au majeur. Selon le cours, le numéro majeur correspond à un type de périphérique (un numéro par driver) et le numéro mineur correspond à un périphérique particulier parmi plusieurs de même type (les numéros mineurs sont donc gérés par un même driver).
 
-**Question 3.5** *Analysez le contenu de /bin, /sbin, /usr/bin et /usr/sbin. Qu'y a t-il de particulier ?  Quel est l'avantage ?*
+On peut retrouver ces majeurs et mineurs dans `/dev` :
+`ls ­l /dev`
+
+**Question 3.5** *Analysez le contenu de /bin, /sbin, /usr/bin et /usr/sbin. Qu'y a t-il de particulier ? Quel est l'avantage ?*
+
 ```
-root@devkit8600:~# ls /bin
+ls /bin
 ash                  chown                echo                 kmod                 mktemp               ping                 sleep                umount
 bash                 cp                   egrep                ln                   more                 ping6                stat                 uname
 busybox              cpio                 false                login                mount                ps                   stty                 usleep
@@ -622,7 +667,10 @@ cat                  df                   gunzip               lsmod            
 chattr               dmesg                gzip                 lsmod.kmod           netstat              run-parts            tar
 chgrp                dnsdomainname        hostname             mkdir                pidof                sed                  touch
 chmod                dumpkmap             kill                 mknod                pidof.sysvinit       sh                   true
-root@devkit8600:~# ls /sbin/
+```
+
+```
+ls /sbin/
 bootlogd           getty              init               iwlist             logread            modprobe.kmod      rmmod              shutdown.sysvinit  syslogd
 depmod             halt               init.sysvinit      iwpriv             losetup            nologin            rmmod.kmod         start-stop-daemon  telinit
 depmod.kmod        halt.sysvinit      insmod             iwspy              lsmod              pivot_root         route              sulogin            udhcpc
@@ -630,7 +678,10 @@ fdisk              hwclock            insmod.kmod        killall5           mksw
 fsck               ifconfig           ip                 klogd              modinfo            poweroff.sysvinit  runlevel.sysvinit  swapon             vigr.shadow
 fstab-decode       ifdown             iwconfig           ldconfig           modinfo.kmod       reboot             setconsole         switch_root        vipw
 fstrim             ifup               iwgetid            loadkmap           modprobe           reboot.sysvinit    shutdown           sysctl             vipw.shadow
-root@devkit8600:~# ls /usr/bin/
+```
+
+```
+ls /usr/bin/
 [                     dbus-monitor          get_device            md5sum                passwd                seq                   update-alternatives
 [[                    dbus-run-session      get_driver            mesg                  passwd.shadow         sexp-conv             uptime
 ar                    dbus-send             get_module            mesg.sysvinit         patch                 sg                    usb-devices
@@ -653,7 +704,10 @@ dbclient              flock                 logger                openvt        
 dbus-cleanup-sockets  free                  logname               opkg                  rfcomm                udevadm
 dbus-daemon           fuser                 lsusb                 opkg-cl               scp                   uniq
 dbus-launch           gatttool              lsusb.py              opkg-key              sdptool               unzip
-root@devkit8600:~# ls /usr/sbin/
+```
+
+```
+ls /usr/sbin/
 addgroup           chpasswd.shadow    dropbearmulti      grpck              logoutd            nl-cls-delete      ofonod             rpcinfo            usermod
 adduser            chroot             fbset              grpconv            newusers           nl-cls-list        pwck               run-postinsts      wpa_cli
 avahi-daemon       delgroup           genl-ctrl-list     grpunconv          nl-class-add       nl-link-list       pwconv             udhcpd             wpa_supplicant
@@ -663,22 +717,37 @@ chgpasswd          dropbearconvert    groupmems          hciemu             nl-c
 chpasswd           dropbearkey        groupmod           loadfont           nl-cls-add         nl-qdisc-list      rpcbind            userdel
 ```
 
+Selon le dossier, on ne trouve pas les mêmes programmes (système ou non, utilisateur ou non). 
+
 ### Exercice 4
-**Question 4.1** *Analysez le contenu du dossier `/home/mi11/poky/build/tmp/deploy/ipk. Comment est-il organisé ?*
-selon spécificité du paquet
+**Question 4.1** *Analysez le contenu du dossier `/home/mi11/poky/build/tmp/deploy/ipk`. Comment est-il organisé ?*
+
+```
+ls /home/mi11/poky/build/tmp/deploy/ipk
+all
+armv7a-vfp-neon
+devkit8600
+x86_64-nativesdk
+```
+Ce dossier contient des sous dossier contenant eux-même les programmes à installer dans Poky. Selon le sous dossier, on a un paquet plus ou moins spécifique à la cible.
+
 *Que contiennent les sous dossiers ?*
-* all : ipk de dépendances uniquement
-* armv7a-vfp-neon : packages spécifiques ARMv7a
-* devkit8600 : packages spécifiques à notre cible
-* x86_64-nativesdk : packages nécessaire à l'hôte pour la crosscompilation
+
+* `all` : ipk de dépendances uniquement
+* `armv7a-vfp-neon` : packages spécifiques ARMv7a
+* `devkit8600` : packages spécifiques à notre cible
+* `x86_64-nativesdk` : packages nécessaire à l'hôte pour la crosscompilation
 
 *Où se trouve le noyau ?*
-devkit8600
+
+Il se trouve dans le dossier `devkit8600`
 
 *Où se trouve libxml2 ?*
-armv7a-vfp-neon
+
+La librairie se trouve elle dans `armv7a-vfp-neon` car elle n'est pas spécifique à notre cible (au contraire du noyau).
 
 **Question 4.2** *Quels sont les différents paquets relatifs à libxml2 ?*
+
 * `libxml2_2.9.1-r0_armv7a-vfp-neon.ipk`
 * `libxml2-dbg_2.9.1-r0_armv7a-vfp-neon.ipk`
 * `libxml2-dev_2.9.1-r0_armv7a-vfp-neon.ipk`
@@ -686,59 +755,98 @@ armv7a-vfp-neon
 * `libxml2-ptest_2.9.1-r0_armv7a-vfp-neon.ipk`
 * `libxml2-staticdev_2.9.1-r0_armv7a-vfp-neon.ipk`
 
+On installe donc la lib : `opkg install libxml2_2.9.1-r0_armv7a-vfp-neon.ipk`.
+
 **Question 4.3** *Donnez au moins deux méthodes pour copier le fichier dans le système de fichiers de la cible.*
-- cp sur l'hôte vers /tftpboot/rootfs/home/root/Download
-- scp vers 192.168.1.6
+
+On peut copier un fichier sur la cible par les méthodes suivantes :
+- copier sur l'hôte vers le filesystem stocké en local (`/tftpboot/rootfs/home/root/Download` par exemple)
+- scp vers 192.168.1.6 : `scp fichier root@192.168.1.6:/home/root/`
+- monter le système de fichier en local avec sftp
 
 **Question 4.4** *Où se trouvent les fichiers de libxml2 installés par le gestionnaire de paquets. Quels sont ces fichiers ?*
-/usr/lib/
+
+Ces fichiers se trouvent dans `/usr/lib/`.
+
+```
+ls /usr/lib | grep xml
+XXX
+```
 
 
 
 ### Exercice 5
 **Question 5.1** *À l'aide de la documentation de la carte, comment peut on accéder  aux LEDs en mode utilisateur ? Vérifiez cette fonctionnalité sur la cible.*
-Selon le manuel chap. 3.8.1.1 p. 72 il faut exécuter echo 1 > /sys/class/leds/user_led/brightness ce qui ne fonctionne pas pour le moment car le noyaux ne supporte pas les LEDs pour le moment
+
+Selon le manuel chap. 3.8.1.1 p. 72 il faut exécuter `echo 1 > /sys/class/leds/user_led/brightness` ce qui ne fonctionne pas pour le moment car le noyaux ne supporte pas les LEDs.
+
+```
 ls /sys/class/leds/
+XXX
+```
+
+```
+source /opt/poky/1.7.3/environment-setup-armv7a-vfp-neon-poky-linux-gnueabi 
+unset LDFLAGS
+```
 
 **Question 5.2** *À quoi sert ce fichier ? Quel est le préfixe de la chaîne de compilation croisée ?*
-Définir des variables d'environnement pour permettre la compilation croisée
-arm-poky-linux-gnueabi-
+
+Ce fichier permet de définir des variables d'environnement pour permettre la compilation croisée. Il définit notamment les commandes de compilation préfixées par `arm-poky-linux-gnueabi-`.
 
 **Question 5.3** *Comment obtenir la liste des configurations pour défaut du noyau pour une architecture ARM ?*
+
+```
 make ARCH=arm help
+XXX
+```
+
 *Quelles sont les configurations par défaut possibles pour la devkit8600 ? Par la suite on ne gardera que la première.*
-devkit8600_defconfig et devkit8600_tisdk_defconfig
+
+On peut utiliser les configurations devkit8600_defconfig et devkit8600_tisdk_defconfig.
+
+```
 make ARCH=arm devkit8600_defconfig
--> config par défaut
+```
 
 **Question 5.4** *Quelle est l'option à activer dans le noyau ?*
-Device Drivers -> LED Support -> LED Support for GPIO conected LEDs
-*Quelles sont les différentes possibilités pour l'activer ?*
-modifié en dur (`y`) ou en module (`m`)
 
-Configuration actuelle du noyau (modif de la config par défaut) :
-~/devkit8600/linux-3.1.0-psp04.06.00.03.sdk/.config
+Il faut activer `Device Drivers` -> `LED Support` -> `LED Support for GPIO conected LEDs`
+
+*Quelles sont les différentes possibilités pour l'activer ?*
+
+On peut faire la modification en dur dans le noyau (`y`) ou en module (`m`) à l'exécution.
+
+La configuration actuelle du noyau (modification de la configuration par défaut) se trouve à `~/devkit8600/linux-3.1.0-psp04.06.00.03.sdk/.config`
 
 **Question 5.5** *Où se trouve le résultat de la compilation ?*
-Sortie à arch/arm/boot/uImage
+
+Sortie à XXX`arch/arm/boot/uImage`
 
 **Question 5.6** *Comment vérifier dans les logs de démarrage que le noyau utilisé est bien celui qui vient d'être compilé ?*
-root@devkit8600:~# dmesg | grep "Linux version"
+
+```
+dmesg | grep "Linux version"
 Linux version 3.1.0 (mi11@mi11-VirtualBox) (gcc version 4.9.1 (GCC) ) #1 Mon Apr 10 20:00:59 CEST 2017
+```
 
 **Question 5.7** *Comment vérifier dans les logs de démarrage que la fonctionnalité ajoutée est bien présente ?*
-root@devkit8600:~# dmesg | grep led
+
+```
+dmesg | grep led
 Memory policy: ECC disabled, Data cache writeback
 Serial: 8250/16550 driver, 4 ports, IRQ sharing enabled
 console [ttyO0] enabled
 Registered led device: sys_led
 Registered led device: user_led
 sgtl5000 1-000a: Failed to add route HPLOUT->Headphone Jack
+```
 
-
-root@devkit8600:~# echo 1 > /sys/class/leds/user_led/brightness
-root@devkit8600:~# echo 0 > /sys/class/leds/user_led/brightness
-
+Désormais, les commandes suivantes fonctionnent :
+```
+echo 1 > /sys/class/leds/user_led/brightness
+echo 0 > /sys/class/leds/user_led/brightness
+```
 
 
 
