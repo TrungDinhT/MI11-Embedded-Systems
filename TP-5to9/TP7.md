@@ -321,7 +321,7 @@ des tâches dès le début. Les tâches devront être libérées après avoir é
 
 #### Question 2.3 : A quelle valeur faut-il initialiser le sémaphore ?
 
-0
+0, car nous voulons bloquer toutes les tâches et seulement les libérer avec le broadcast.
 
 #### Question 2.4 : Quelle est l’influence du paramètre mode utilisé à la création du sémaphore ?
 
