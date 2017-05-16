@@ -12,6 +12,7 @@
 	- calcul,
 	- libération de la ressource
 - `task_descriptor` :
+
 ```c
 typedef struct task_descriptor{
 	RT_TASK task;					// tâche temps réel
@@ -28,6 +29,7 @@ typedef struct task_descriptor{
 La fonction `rt_task_name` récupère la tâche courante (par `rt_task_inquire(NULL,&info);`) afin de retourner son nom.
 
 La structure `RT_TASK_INFO` contient :
+
 ```c
 typedef struct rt_task_info {
 	int 		bprio 			// Base priority. 
@@ -156,10 +158,16 @@ doing PILOTAGE ok : 5575
 
 **Question 6** *Expliquez le fonctionnement de la solution retenue.*
 
+On utilise un second sémaphore pour observer si la tâche `DISTRIB_DONNEES` est en cours d'exécution. Si c'est le cas, `ORDO_BUS` va observer qu'il ne reste plus de jeton pour ce sémaphore :
 
+```c
+RT_SEM_INFO sem_info;
 
-
-
+rt_sem_inquire(&distrib_sem, &sem_info);
+if(sem_info.count == 0){
+	// DISTRIB_DONNEES est en cours de fonctionnement
+}
+```
 
 
 **Question 7** *Testez votre programme pour les cas extrêmes du temps d’exécution de METEO. Qu’observez vous? Expliquez ce phénomène à l’aide de chronogrammes.*
@@ -235,7 +243,35 @@ doing CAMERA ok : 5601
 
 On voit que `METEO` (de priorité la plus basse) retarde `DISTRIBDONNEES` (de priorité supérieure). On a donc un cas d'**inversion de priorité** due à l'accès concurent au bus 1553, notre ressource.
 
-XXX chronogrammes
+
+Voici le chronogramme schématisant ce problème :
+
+```
+				----------------------------------------------------------------------
+				|     ^     |     |     |     |     ^     |     |     |     |     ^   
+ORDO_BUS 		|     |∎∎∎∎∎|     |     |     |     |∎∎∎∎∎|     |     |     |     |∎∎ RESET !!
+				----------------------------------------------------------------------
+				|     ^     |     |     |     |     ^     |     |     |     |     ^   
+DISTRIB_DONNEES*|     |     |∎∎∎∎∎|     |     |     |     |     |     |     |  ∎∎∎|---
+				----------------------------------------------------------------------
+				|     |     |     |     |     |     ^     |     |     |     |     |   
+PILOTAGE*		|     |     |     |     |     |     |     |     |     |     |     |   
+				----------------------------------------------------------------------
+				|     |     |     |     |     |     ^     |     |     |     |     |   
+RADIO 			|     |     |     |     |     |     |     |∎∎∎∎∎|     |     |     |   
+				----------------------------------------------------------------------
+				|     |     |     |     |     |     ^     |     |     |     |     |   
+CAMERA 			|∎∎∎∎∎|-----|-----|∎    |     |     |     |     |∎∎∎∎∎|     |     |   
+				----------------------------------------------------------------------
+				|     |     |     |     |     |     |     |     |     |     |     |   
+MESURES* 		|     |     |     | ∎∎∎∎|∎∎∎∎∎|     |     |     |     |     |     |   
+				----------------------------------------------------------------------
+				|     |     |     |     |     |     |     |     |     |     |     |   
+METEO* 			|     |     |     |     |     |∎∎∎∎∎|-----|-----|-----|∎∎∎∎∎|∎∎   |   
+				----------------------------------------------------------------------
+			  5100  5125  5150  5175  5200  5225  5250  5275  5300  5325  5350  5375  
+
+```
 
 
 **Question 8** *Quelle solution proposez vous pour résoudre le problème ?*
@@ -243,12 +279,14 @@ XXX chronogrammes
 Pour résoudre l'inversion de priorité, il faut élever temporairement la priorité de `METEO` au niveau de `DISTRIBDONNEES`. Il faut donc utiliser un mécanisme de synchronisation qui fait de l'héritage de priorité : le mutex. Celui-ci est utile pour les ressources partagées car il gère les priorités. Le sémaphore, lui, sert plutôt pour la synchronisation des tâches.
 
 **Question 9** *Testez et commentez le résultat.
+
+L'exécution de nos tâches avec un mutex sur la ressource et un temps de calcul de 60ms pour `METEO` donne le résultat suivant :
 ```
 ...
 doing ORDO_BUS : 5000
 doing ORDO_BUS ok : 5025
 doing DISTRIB_DONNEES : 5025
-doing DISTRIB_DONNEES ok : 5050
+doing DISTRIB_DONNEES ok : 5050p
 doing PILOTAGE : 5051
 doing PILOTAGE ok : 5076 || bprio: 5, cprio: 5
 doing RADIO : 5076
@@ -276,7 +314,38 @@ doing DISTRIB_DONNEES : 5400
 doing DISTRIB_DONNEES ok : 5425
 ...
 ```
-XXX Commenter
+
+On observe qu'il n'y a plus de reset de la part de `ORDO_BUS` mais on voit également que le mutex augmente la priorité de `METEO` à 6 pour qu'elle ne monopolise pas la ressource, finisse rapidement son exécution et permette à `DISTRIB_DONNEES` de s'exécuter. Normalement, `DISTRIB_DONNEES` devrait ici s'exécuter à 5275 (juste après `ORDO_BUS`) mais on termine plutôt l'exécution de `METEO` (commencée à 5226).
+
+Voici le chronogramme schématisant cette exécution :
+
+```
+				----------------------------------------------------------------------------
+				|     ^     |     |     |     |     ^     |     |     |     |     ^     |   
+ORDO_BUS 		|     |∎∎∎∎∎|     |     |     |     |∎∎∎∎∎|     |     |     |     |∎∎∎∎∎|
+				----------------------------------------------------------------------------
+				|     ^     |     |     |     |     ^     |     |     |     |     ^     |   
+DISTRIB_DONNEES*|     |     |∎∎∎∎∎|     |     |     |     |     |  ∎∎∎|∎∎   |     |     |∎∎∎
+				----------------------------------------------------------------------------
+				|     |     |     |     |     |     ^     |     |     |     |     |     |   
+PILOTAGE*		|     |     |     |     |     |     |     |     |     |  ∎∎∎|∎∎   |     |   
+				----------------------------------------------------------------------------
+				|     |     |     |     |     |     ^     |     |     |     |     |     |   
+RADIO 			|     |     |     |     |     |     |     |     |     |     |  ∎∎∎|-----|---
+				----------------------------------------------------------------------------
+				|     |     |     |     |     |     ^     |     |     |     |     |     |   
+CAMERA 			|∎∎∎∎∎|-----|-----|∎    |     |     |     |     |     |     |     |     |   
+				----------------------------------------------------------------------------
+				|     |     |     |     |     |     |     |     |     |     |     |     |   
+MESURES* 		|     |     |     | ∎∎∎∎|∎∎∎∎∎|     |     |     |     |     |     |     |   
+				----------------------------------------------------------------------------
+				|     |     |     |     |     |     |     |     |     |     |     |     |   
+METEO* 			|     |     |     |     |     |∎∎∎∎∎|-----|∎∎∎∎∎|∎∎   |     |     |     |   
+				----------------------------------------------------------------------------
+			  5100  5125  5150  5175  5200  5225  5250  5275  5300  5325  5350  5375  5400
+```
+
+On voit bien que la priorité de `METEO` est augmentée pour libérer rapidement le bus nécessité par les tâches de priorité plus importante (*héritage de priorité*).
 
 **Question 10** *Fournissez le code complet du programme, en prenant soin de le commenter.
 
@@ -296,7 +365,7 @@ XXX Commenter
 #define TASK_MODE T_JOINABLE
 #define TASK_STKSZ 0
 
-//#define SEM
+//#define SEM 						// compilation avec mutex, décommenter pour compiler avec sémaphore
 
 static RT_SEM sem;
 static RT_MUTEX mutex;
@@ -304,12 +373,12 @@ static RT_SEM distrib_sem;
 RTIME init_time;
 
 typedef struct task_descriptor{
-	RT_TASK task;
-	void (*task_function)(void*);
-	RTIME period;
-	RTIME duration;
-	int priority;
-	bool use_resource;
+	RT_TASK task;					// tâche temps réel
+	void (*task_function)(void*);	// pointeur sur la fonction de la tâche à exécuter
+	RTIME period;					// période d'exécution
+	RTIME duration;					// temps de calcul à chaque période
+	int priority;					// priorité de la tâche
+	bool use_resource;				// défini si la tâche a besoin d'une ressource
 } task_descriptor;
 
 ///////////////////////////////////////////////////////////
@@ -326,6 +395,7 @@ int time_since_start(void) {
 }
 
 ///////////////////////////////////////////////////////////
+// Acquisition de la ressource par un mutex ou un sémaphore (selon SEM)
 void acquire_resource(void) {
 #ifdef SEM
 	rt_sem_p(&sem, TM_INFINITE);
@@ -344,9 +414,14 @@ void release_resource(void) {
 }
 
 ///////////////////////////////////////////////////////////
+// Attente active sur un certain TEMPS D'EXECUTION de la tache
 void busy_wait(RTIME time) {
 	static RT_TASK_INFO info;
 	rt_task_inquire(NULL,&info);
+
+	// moment du compteur de temps d'exécution de la tâche courrante
+	// auquel on va arrêter l'attente.
+	// Insensible à l'éventuelle préamption de la tâche entre temps.
 	RTIME time_to_end = info.exectime + time;
 	do {
 		rt_task_inquire(NULL,&info);
@@ -354,6 +429,7 @@ void busy_wait(RTIME time) {
 }
 
 ///////////////////////////////////////////////////////////
+// Tâche de surveillance du fonctionnement du bus de données
 void rt_task_ordobus(void *cookie) {
 	struct task_descriptor* params=(struct task_descriptor*)cookie;
 
@@ -367,7 +443,7 @@ void rt_task_ordobus(void *cookie) {
 		rt_task_wait_period(&brouette);
 		rt_sem_inquire(&distrib_sem, &sem_info);
 		if(sem_info.count == 0){
-			// Current semaphore value = 0 -----> distribdonnees running
+			// Valeur actuelle du sémaphore = 0 -----> distribdonnees est en cours de fonctionnement
 			rt_printf("reset\n");
 			exit(1);
 		}
@@ -448,20 +524,22 @@ int main(void) {
 
 	init_time=rt_timer_read();
 
-	// int sem_init(sem_t *sem, int pshared, unsigned int initial_value)
+	// Création du sémaphore d'utilisation du bus 1553
 	if (rt_sem_create(&sem, "wait port 1553", 1, S_PRIO) == -1){
 			printf("rt_sem_create: failed: %s\n", strerror(errno));
 	}
 
-	// int sem_init(sem_t *sem, int pshared, unsigned int initial_value)
+	// Création du sémaphore d'exécution de la tâche distribdonnees
 	if (rt_sem_create(&distrib_sem, "distribdonnees running", 1, S_PRIO) == -1){
 			printf("rt_sem_create: failed: %s\n", strerror(errno));
 	}
 
+	// Création du mutex d'utilisation du bus 1553
 	if (rt_mutex_create(&mutex, "mutex 1553") == -1){
 			printf("rt_mutex_create: failed: %s\n", strerror(errno));
 	}
 
+	// Création des tâches définies dans le sujet
 	struct task_descriptor desc_ordo_bus;
 	desc_ordo_bus.period = (RTIME)125000000;
 	desc_ordo_bus.duration = (RTIME)25000000;
@@ -529,6 +607,3 @@ int main(void) {
 	return	EXIT_SUCCESS;
 }
 ```
-
-
-XXX Commenter
