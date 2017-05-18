@@ -1,15 +1,11 @@
-# MI11 - Rapport TP 1 à 3
-
-Astuce : pour afficher de l'assembleur highlighté :
-```armasm
-.data 0x12 : AT(0x12) {
-}
-```
+# Compte-rendu TP "Développement embarqué ARM sur cible nue"
 
 ## TP 1
+#### Edition de liens
 Le but de ce TP était de prendre en main la chaîne de compilation afin de préparer une image mémoire correcte pour notre cible.
+Il nous a fallu comprendre les bases du fonctionnement de l'édition de liens lors de la formation d'une image exécutable.
 
-Nous avons donc préparé un programme C simple :
+Nous avons donc préparé un programme C simple, test.c :
 ```c
 int a;
 int b = 1;
@@ -25,12 +21,120 @@ int main(void){
 }
 ```
 
-Nous avons utilisé les utilitaires suivants (penser à les préfixer par `arm-none-eabi-` afin d'obtenir la version dédiée à notre architecture) :
-* 
-* `objdump` (`-ths`)
-* 
+Nous avons besoin d'un compilateur tel que gcc pour compiler le programme en C ci dessus, cependant le gcc installé par défaut sur notre machine convient à l'hôte mais pas à la cible.
+Il est nécessaire de compiler notre programme avec le compilateur suivant: `arm-none-eabi-gcc` avec l'option `-c`.
+
+Après la compilation d’un programme en C (ou tout autre langage compilé), des fichiers objets sont générés. Ces fichiers peuvent ensuite être combinés pour former une image exécutable contenant le programme. La phase comprenant la création de l’image s’appelle l’édition de liens.
+
+Après compilation, on peut "observer" le contenu des fichiers objet grâce à la commande `arm-none-eabi-objdump`. Ceci nous permet d’observer les différentes sections et leur contenu.
+Avec les options `-ths`, on remarque la présence de 5 sections pour notre programme écrit en C : `.text`, `.data`, `.bss`, `.rodata` et `.comment`. On peut également vérifier dans quelle section se trouvent les variables utilisées. La valeur affectée à la chaîne de caractère ("Salut") est visible en section `.rodata`. De plus, la section`.data` a une taille de 8 octets et contient les variables initialées ici `b` et `s`. Sachant qu'en ARM un int (b) et un char* (s) valent tous les deux 4 bits, ceci correspond.
+Il existe également les options `-rd` avec `objdump` afin d'afficher le désassemblage de la section `.text`.
+
+
+Nous avons ensuite créé un second programme en C, test2.c:
+```c
+extern int b;
+int f(void){
+    return (2*b);
+}
+```
+On peut à nouveau inspecter le contenu du fichier objet associé en suivant les étapes comme précédemment.
+Mais ce qui nous intéresse à présent, c'est d'exécuter la commande qui suit pour créer une image exécutable.
+`arm-none-eabi-gcc -nostdlib test.c test2.c`
+
+On se trouve alors avec le fichier `a.out`, l'image exécutable.
+En exécutant la commande `arm-none-eabi-readelf -a a.out`, on observe dans le Header que ce ".out" est fait pour UNIX, ce qui ne nous convient pas. Cela provient du fait que le script d'édition de liens utilisé par défaut est pour UNIX (lors de l'exécution de `arm-none-eabi-gcc -nostdlib test.c test2.c`).
+On peut accèder à l'ensemble des scripts d'édition de liens dans le dossier `/arm-none-eabi/lib/ldscripts/`.
+Il nous faudra donc créer notre propre script afin que la compilation soit correcte.
+
+Finalement nous avons créé un troisième programme cette fois-ci en c++, test3.cpp:
+```c
+class A {
+    public:
+        A() {}
+        int f() {return 2;}
+};
+int main() {
+    A a;
+    return a.f();
+}
+```
+En le compilant (`arm-none-eabi-g++ -c test3.cpp`), puis en analysant son contenu on se rend compte que le fichier objet est beaucoup plus complexe qu'en C, avec un nombre de sections plus important. C'est pour cela que nous allons continuer les TPs en se cantonnant au langage C. 
+
+Revenons donc à nos programmes test.c et test2.c, nous allons les compiler puis générer à partir des deux fichiers objets notre image exécutable (`a.out`) pour avoir obtenir l'image mémoire (appelée "image"). Commandes à suivre:
+```
+arm-none-eabi-gcc -c test.c
+arm-none-eabi-gcc -c test2.c
+
+arm-none-eabi-ld armtd2.x test.o test2.o
+
+arm-none-eabi-objdump -ths a.out
+
+arm-none-eabi-objcopy -O binary -S a.out image
+
+```
+Note sur la génération de l'image exécutable (`a.out`), nous utilisons cette fois la commande `arm-none-eabi-ld` qui nous permet de spécifier un script (`armtd1.x`) correspondant à notre cible.
+
+Contenu de `armtd1.x`:
+```C
+OUTPUT_FORMAT("elf32-littlearm", "elf32-bigarm",
+	      "elf32-littlearm")
+OUTPUT_ARCH(arm)
+ENTRY(_start)
+SECTIONS
+{
+  .text           : {
+  		*(.vector)
+  		*(.text)
+  }
+  .rodata           : {
+  		*(.rodata)
+   }
+  .bss           :
+  { 
+  	*(.bss)
+  	*(COMMON) 
+  }
+  .hash           : { *(.hash) }
+}
+```
+
+On peut comparer l'image mémoire générée avec a.out:
+*` ls -la` pour afficher plus d'informations sur les fichiers et notamment comparer leur taille (image est beaucoup plus petit).
+*`hexdump -C image`, visualiser le contenu de l'image en hexadécimal.
+
+Pour résumé, la répartition en mémoire des différentes sections suit un schéma défini dans un script de liens. Les scripts par défaut du système prennent en charge la totalité des langages supportés, d’où leur longueur. Pour notre programme C comprenant 5 sections, un script beaucoup plus simple est suffisant (notre première version est armtd1.x).
+
+Il est possible d’omettre les sections dont on peut se passer, comme par exemple les sections relatives aux commentaires. Cela permet de réduire drastiquement la taille des fichiers en sortie.
+
+Nous verrons dans le prochain TP qu'au sein d'un tel fichier, il est possible de définir les adresses de début et de fin des sections. On peut également y utiliser des fonctions de base et définir des variables qui pourront être réutilisées plus tard dans du code assembleur.
+
+#### OPENOCD, chargement de l'image sur la cible nue
+Pour faire fonctionner la cible nous allons utiliser OPENOCD avec fichier de config `apf9328.cfg` à récupérer sur le moodle:
+* `openocd -f ./apf9328.cfg`
+
+Dans un nouveau terminal:
+```
+telnet localhost 4444
+reset init
+```
+
+On ouvre ensuite putty et complète la configuration afin de se connecter au travers de la sonde JTAG à la cible.
+
+Finalement, on revient au terminal d'OPENOCD:
+```
+resume// relance le programme qui était en init.
+halt// arrête le programme.
+reg
+reg pc 0
+load-image image 0x8000000
+mdw 0x8000020// même résultat que `hexdump -C`
+arm disasemble 0x8000020// même résultat qu'avec `-objdump -rd a.out`
+resume 0x8000000// on précise la valeur de pc pour relancer le programme.
+```
 
 Au final, notre programme chargé à l'adresse `0x08000000` (début de la mémoire volatile SDRAM) plante à la première instruction (qui est un `push`) car le pointeur de pile `sp_svc` n'est pas initialisé.
+Dans le prochain TP nous allons utiliser Eclipse pour configurer tout les manipulations précédentes dans le logiciel, c'est alors Eclipse qui s'en chargera.
 
 ## TP 2
 ### Paramétrage d'Eclipse
@@ -60,8 +164,130 @@ Grâce au programme en assembleur nous allons initialiser `sp` (le pointeur de p
 On ajoute a notre script de lien les variables `bss_start` et `bss_size`, on pourra récupérer ces valeurs depuis le code assembleur ce qui va nous permettre de mettre toutes les valeurs de bss à 0.
 En faisant un objdump, on remarque que deux variables appartiennent à .bss (a et c), elles sont codées sur 32 bits chacune, donc 4 octets chacune et on retrouve bien une taille de bss égale à 8.
 
+Code final du script de liens:
+```C
+OUTPUT_FORMAT("elf32-littlearm", "elf32-bigarm",
+	      "elf32-littlearm")
+OUTPUT_ARCH(arm)
+ENTRY(_start)
+SECTIONS
+{
+  . = 0x0;
+  .text           : {
+  		*(.vector)
+  		*(.text)
+  }
+  .rodata           : {
+  		*(.rodata)
+  		. = ALIGN(4);
+   }
+  rodata_end = LOADADDR(.rodata) + SIZEOF(.rodata);
+  .data		0x008000000 : AT(rodata_end) {*(.data) }
+  data_VMA_start = ADDR(.data);
+  data_start = LOADADDR(.data);
+  data_end = data_start + SIZEOF(.data);
+  .bss           :
+  { 
+  	*(.bss)
+  	*(COMMON) 
+  }
+  bss_start = ADDR(.bss);
+  bss_end = bss_start + SIZEOF(.bss);
+  .hash           : { *(.hash) }
+}
+```
+
 PAS TERMINE, il faut finir le code assembleur, l'utilisation des variables du script de liens ne fonctionnent pas
 au retour de main, faire une boucle infini (b.) ou réexcuter le code sinon on laisse le proceseur continuer son chemin et faire n'importe quoi...
+
+Code final assembleur:
+```armasm
+.section ".vector", "x", %progbits
+vectors:
+	b resetHandler 		@ Reset vector
+	b .					@ undefined @ Undefined instruction
+	b .					@ soft_interrupt @ Software interrupt
+	b .					@ prefetch_abort @ Prefetch abort exception
+	b .					@ data_abort @ Data abort exception
+	b . 				@ Reserved vector, not used
+	b irq_handler		@ irq_handler @ Normal interrupt
+	b .					@ iq_handler @ Fast interrupt
+
+.text
+.arm
+.global resetHandler
+@ .func resetHandler
+resetHandler:
+
+@ Configure target
+bl _lowlevel_init
+
+@ Copy variables to their virtual address
+ldr r0, =data_VMA_start
+ldr r1, =data_start
+ldr r2, =data_end
+
+
+.global dataToVMA
+.func dataToVMA
+dataToVMA:
+	ldr r3, [r1]
+	str r3, [r0]
+	add r0, #4
+	add r1, #4
+
+	cmp r1, r2
+
+	bne dataToVMA
+.endfunc
+
+
+@ Set global variables (bss) to 0
+ldr r0, =bss_start
+ldr r2, =bss_end
+
+mov r1, #0
+
+.global bssToZeros
+.func bssToZeros
+bssToZeros:
+	str r1, [r0], #4
+
+	cmp r0, r2
+
+	bne bssToZeros
+.endfunc
+
+@ Initialize the stack pointer
+ldr sp , =0x08010000
+
+@ IRQ mode
+mrs r0, CPSR      @ Copie CPSR dans r0
+bic r0, r0, #0x1f @ Met à 0 les 5 bits M
+orr r0, r0, #0x12 @ et change vers le mode interrupt
+msr CPSR_c, r0    @ Recharge les bits de contrôle
+nop               @ de CPSR
+
+@ change IRQ stack pointer
+ldr sp , =0x08020000
+
+@ SVC mode
+mrs r0, CPSR      @ Copie CPSR dans r0
+bic r0, r0, #0x1f @ Met à 0 les 5 bits M
+orr r0, r0, #0x13 @ et change vers le mode superviseur
+msr CPSR_c, r0    @ Recharge les bits de contrôle
+nop               @ de CPSR
+
+@ Call main()
+bl main
+
+@ If main returns, loop
+b .
+
+.align 4
+.end
+```
+
 
 ## TP 3
 Dans ce TP, nous reprenons le code des semaines passées permettant de préparer la cible pour accueillir et exécuter notre code C cross-compilé.
