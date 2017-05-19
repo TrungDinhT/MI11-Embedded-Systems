@@ -1,5 +1,7 @@
 # Compte-rendu TP "Développement embarqué ARM sur cible nue"
 
+**Mewen Michel et Sander Ricou - MI11 UTC**
+
 ## TP 1
 #### Edition de liens
 Le but de ce TP était de prendre en main la chaîne de compilation afin de préparer une image mémoire correcte pour notre cible.
