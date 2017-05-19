@@ -27,7 +27,7 @@ Il est nécessaire de compiler notre programme avec le compilateur suivant: `arm
 Après la compilation d’un programme en C (ou tout autre langage compilé), des fichiers objets sont générés. Ces fichiers peuvent ensuite être combinés pour former une image exécutable contenant le programme. La phase comprenant la création de l’image s’appelle l’édition de liens.
 
 Après compilation, on peut "observer" le contenu des fichiers objet grâce à la commande `arm-none-eabi-objdump`. Ceci nous permet d’observer les différentes sections et leur contenu.
-Avec les options `-ths`, on remarque la présence de 5 sections pour notre programme écrit en C : `.text`, `.data`, `.bss`, `.rodata` et `.comment`. On peut également vérifier dans quelle section se trouvent les variables utilisées. La valeur affectée à la chaîne de caractère ("Salut") est visible en section `.rodata`. De plus, la section`.data` a une taille de 8 octets et contient les variables initialées ici `b` et `s`. Sachant qu'en ARM un int (b) et un char* (s) valent tous les deux 4 bits, ceci correspond.
+Avec les options `-ths`, on remarque la présence de 5 sections pour notre programme écrit en C : `.text`, `.data`, `.bss`, `.rodata` et `.comment`. On peut également vérifier dans quelle section se trouvent les variables utilisées. La valeur affectée à la chaîne de caractère ("Salut") est visible en section `.rodata`. De plus, la section`.data` a une taille de 8 octets et contient les variables initialées ici `b` et `s`. Sachant qu'en ARM un int (b) et un char* (s) valent tous les deux 4 octets, ceci correspond.
 Il existe également les options `-rd` avec `objdump` afin d'afficher le désassemblage de la section `.text`.
 
 
@@ -161,10 +161,9 @@ Note :
 
 Grâce au programme en assembleur nous allons initialiser `sp` (le pointeur de pile), initialiser la zone `bss` à 0 en mémoire et enfin appeler notre fonction main pour commencer son exécution.
 
-On ajoute a notre script de lien les variables `bss_start` et `bss_size`, on pourra récupérer ces valeurs depuis le code assembleur ce qui va nous permettre de mettre toutes les valeurs de bss à 0.
-En faisant un objdump, on remarque que deux variables appartiennent à .bss (a et c), elles sont codées sur 32 bits chacune, donc 4 octets chacune et on retrouve bien une taille de bss égale à 8.
+On ajoute a notre script de lien les variables `bss_start` et `bss_end`, on pourra récupérer ces valeurs depuis le code assembleur ce qui va nous permettre de mettre toutes les valeurs de bss à 0.
 
-Code final du script de liens:
+Code du script de liens:
 ```C
 OUTPUT_FORMAT("elf32-littlearm", "elf32-bigarm",
 	      "elf32-littlearm")
@@ -172,20 +171,17 @@ OUTPUT_ARCH(arm)
 ENTRY(_start)
 SECTIONS
 {
-  . = 0x0;
+  . = 0x08000000;
   .text           : {
   		*(.vector)
   		*(.text)
   }
   .rodata           : {
   		*(.rodata)
-  		. = ALIGN(4);
    }
-  rodata_end = LOADADDR(.rodata) + SIZEOF(.rodata);
-  .data		0x008000000 : AT(rodata_end) {*(.data) }
-  data_VMA_start = ADDR(.data);
-  data_start = LOADADDR(.data);
-  data_end = data_start + SIZEOF(.data);
+  .data		: {
+  		*(.data) 
+   }
   .bss           :
   { 
   	*(.bss)
@@ -197,50 +193,10 @@ SECTIONS
 }
 ```
 
-PAS TERMINE, il faut finir le code assembleur, l'utilisation des variables du script de liens ne fonctionnent pas
-au retour de main, faire une boucle infini (b.) ou réexcuter le code sinon on laisse le proceseur continuer son chemin et faire n'importe quoi...
-
-Code final assembleur:
+Code assembleur:
 ```armasm
-.section ".vector", "x", %progbits
-vectors:
-	b resetHandler 		@ Reset vector
-	b .					@ undefined @ Undefined instruction
-	b .					@ soft_interrupt @ Software interrupt
-	b .					@ prefetch_abort @ Prefetch abort exception
-	b .					@ data_abort @ Data abort exception
-	b . 				@ Reserved vector, not used
-	b irq_handler		@ irq_handler @ Normal interrupt
-	b .					@ iq_handler @ Fast interrupt
-
 .text
 .arm
-.global resetHandler
-@ .func resetHandler
-resetHandler:
-
-@ Configure target
-bl _lowlevel_init
-
-@ Copy variables to their virtual address
-ldr r0, =data_VMA_start
-ldr r1, =data_start
-ldr r2, =data_end
-
-
-.global dataToVMA
-.func dataToVMA
-dataToVMA:
-	ldr r3, [r1]
-	str r3, [r0]
-	add r0, #4
-	add r1, #4
-
-	cmp r1, r2
-
-	bne dataToVMA
-.endfunc
-
 
 @ Set global variables (bss) to 0
 ldr r0, =bss_start
@@ -260,23 +216,6 @@ bssToZeros:
 
 @ Initialize the stack pointer
 ldr sp , =0x08010000
-
-@ IRQ mode
-mrs r0, CPSR      @ Copie CPSR dans r0
-bic r0, r0, #0x1f @ Met à 0 les 5 bits M
-orr r0, r0, #0x12 @ et change vers le mode interrupt
-msr CPSR_c, r0    @ Recharge les bits de contrôle
-nop               @ de CPSR
-
-@ change IRQ stack pointer
-ldr sp , =0x08020000
-
-@ SVC mode
-mrs r0, CPSR      @ Copie CPSR dans r0
-bic r0, r0, #0x1f @ Met à 0 les 5 bits M
-orr r0, r0, #0x13 @ et change vers le mode superviseur
-msr CPSR_c, r0    @ Recharge les bits de contrôle
-nop               @ de CPSR
 
 @ Call main()
 bl main
