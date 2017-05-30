@@ -1,4 +1,8 @@
-# Pathfinder
+# Compte-rendu TP "Linux Xenomai - Partie 2"
+
+**Mewen Michel et Sander Ricou - MI11 UTC**
+
+### Pathfinder
 
 **Question 1** *Expliquez le principe des fonctions `create_and_start_rt_task`, `rt_task` ainsi que de la structure `task_descriptor`.*
 
@@ -55,8 +59,8 @@ void busy_wait(RTIME time) {
 	RTIME time_to_end = info.exectime + time;
 
 	do {
-		rt_task_inquire(NULL,&info);
-	} while (time_to_end > info.exectime);	// tant qu'on est avant la fin de l'attente
+		rt_task_inquire(NULL,&info);		// récupère les informations actualisées de la tâche
+	} while (time_to_end > info.exectime);	// tant qu'on est avant la fin de l'attente, on boucle
 }
 ```
 
@@ -98,10 +102,11 @@ Wait done 525
 ...
 ```
 
+Ce qui semble correct !
 
 **Question 5** *Expliquez comment le sémaphore doit être initialisé. Commentez l’enchaînement des tâches pour les cas extrêmes du temps d’exécution de METEO.*
 
-Afin de gérer l'accès à la ressource du bus 1553, il faut initialiser le sémaphore à 1 il ne peut y avoir qu'une tâche à y accéder à chaque instant.
+Afin de gérer l'accès à la ressource du bus 1553, il faut initialiser le sémaphore à 1 : il ne peut y avoir qu'une tâche à y accéder à chaque instant.
 
 Selon que la tâche METEO prenne 40 ms ou 60 ms à s'exécuter, nous obtenons le résultat suivant :
 - 40ms :
@@ -127,6 +132,7 @@ doing ORDO_BUS : 5500
 doing ORDO_BUS ok : 5525
 ...
 ```
+
 - 60ms :
 ```
 ...
@@ -247,29 +253,36 @@ On voit que `METEO` (de priorité la plus basse) retarde `DISTRIBDONNEES` (de pr
 Voici le chronogramme schématisant ce problème :
 
 ```
-				----------------------------------------------------------------------
-				|     ^     |     |     |     |     ^     |     |     |     |     ^   
-ORDO_BUS 		|     |∎∎∎∎∎|     |     |     |     |∎∎∎∎∎|     |     |     |     |∎∎ RESET !!
-				----------------------------------------------------------------------
-				|     ^     |     |     |     |     ^     |     |     |     |     ^   
-DISTRIB_DONNEES*|     |     |∎∎∎∎∎|     |     |     |     |     |     |     |  ∎∎∎|---
-				----------------------------------------------------------------------
-				|     |     |     |     |     |     ^     |     |     |     |     |   
-PILOTAGE*		|     |     |     |     |     |     |     |     |     |     |     |   
-				----------------------------------------------------------------------
-				|     |     |     |     |     |     ^     |     |     |     |     |   
-RADIO 			|     |     |     |     |     |     |     |∎∎∎∎∎|     |     |     |   
-				----------------------------------------------------------------------
-				|     |     |     |     |     |     ^     |     |     |     |     |   
-CAMERA 			|∎∎∎∎∎|-----|-----|∎    |     |     |     |     |∎∎∎∎∎|     |     |   
-				----------------------------------------------------------------------
-				|     |     |     |     |     |     |     |     |     |     |     |   
-MESURES* 		|     |     |     | ∎∎∎∎|∎∎∎∎∎|     |     |     |     |     |     |   
-				----------------------------------------------------------------------
-				|     |     |     |     |     |     |     |     |     |     |     |   
-METEO* 			|     |     |     |     |     |∎∎∎∎∎|-----|-----|-----|∎∎∎∎∎|∎∎   |   
-				----------------------------------------------------------------------
-			  5100  5125  5150  5175  5200  5225  5250  5275  5300  5325  5350  5375  
+		------------------------------------------------------------------------
+ORDO_BUS
+		|     ^     |     |     |     |     ^     |     |     |     |     ^   
+		|     |¤¤¤¤¤|     |     |     |     |¤¤¤¤¤|     |     |     |     |¤¤ RESET !!
+		------------------------------------------------------------------------
+DISTRIB_DONNEES*
+		|     ^     |     |     |     |     ^     |     |     |     |     ^   
+		|     |     |¤¤¤¤¤|     |     |     |     |     |     |     |  ¤¤¤|---
+		------------------------------------------------------------------------
+PILOTAGE*
+		|     |     |     |     |     |     ^     |     |     |     |     |   
+		|     |     |     |     |     |     |     |     |     |     |     |   
+		------------------------------------------------------------------------
+RADIO
+		|     |     |     |     |     |     ^     |     |     |     |     |   
+		|     |     |     |     |     |     |     |¤¤¤¤¤|     |     |     |   
+		------------------------------------------------------------------------
+CAMERA
+		|     |     |     |     |     |     ^     |     |     |     |     |   
+		|¤¤¤¤¤|-----|-----|¤    |     |     |     |     |¤¤¤¤¤|     |     |   
+		------------------------------------------------------------------------
+MESURES*
+		|     |     |     |     |     |     |     |     |     |     |     |   
+		|     |     |     | ¤¤¤¤|¤¤¤¤¤|     |     |     |     |     |     |   
+		------------------------------------------------------------------------
+METEO*
+		|     |     |     |     |     |     |     |     |     |     |     |   
+		|     |     |     |     |     |¤¤¤¤¤|-----|-----|-----|¤¤¤¤¤|¤¤   |   
+		------------------------------------------------------------------------
+	  5100  5125  5150  5175  5200  5225  5250  5275  5300  5325  5350  5375  
 
 ```
 
@@ -278,7 +291,7 @@ METEO* 			|     |     |     |     |     |∎∎∎∎∎|-----|-----|-----|∎�
 
 Pour résoudre l'inversion de priorité, il faut élever temporairement la priorité de `METEO` au niveau de `DISTRIBDONNEES`. Il faut donc utiliser un mécanisme de synchronisation qui fait de l'héritage de priorité : le mutex. Celui-ci est utile pour les ressources partagées car il gère les priorités. Le sémaphore, lui, sert plutôt pour la synchronisation des tâches.
 
-**Question 9** *Testez et commentez le résultat.
+**Question 9** *Testez et commentez le résultat.*
 
 L'exécution de nos tâches avec un mutex sur la ressource et un temps de calcul de 60ms pour `METEO` donne le résultat suivant :
 ```
@@ -320,34 +333,41 @@ On observe qu'il n'y a plus de reset de la part de `ORDO_BUS` mais on voit égal
 Voici le chronogramme schématisant cette exécution :
 
 ```
-				----------------------------------------------------------------------------
-				|     ^     |     |     |     |     ^     |     |     |     |     ^     |   
-ORDO_BUS 		|     |∎∎∎∎∎|     |     |     |     |∎∎∎∎∎|     |     |     |     |∎∎∎∎∎|
-				----------------------------------------------------------------------------
-				|     ^     |     |     |     |     ^     |     |     |     |     ^     |   
-DISTRIB_DONNEES*|     |     |∎∎∎∎∎|     |     |     |     |     |  ∎∎∎|∎∎   |     |     |∎∎∎
-				----------------------------------------------------------------------------
-				|     |     |     |     |     |     ^     |     |     |     |     |     |   
-PILOTAGE*		|     |     |     |     |     |     |     |     |     |  ∎∎∎|∎∎   |     |   
-				----------------------------------------------------------------------------
-				|     |     |     |     |     |     ^     |     |     |     |     |     |   
-RADIO 			|     |     |     |     |     |     |     |     |     |     |  ∎∎∎|-----|---
-				----------------------------------------------------------------------------
-				|     |     |     |     |     |     ^     |     |     |     |     |     |   
-CAMERA 			|∎∎∎∎∎|-----|-----|∎    |     |     |     |     |     |     |     |     |   
-				----------------------------------------------------------------------------
-				|     |     |     |     |     |     |     |     |     |     |     |     |   
-MESURES* 		|     |     |     | ∎∎∎∎|∎∎∎∎∎|     |     |     |     |     |     |     |   
-				----------------------------------------------------------------------------
-				|     |     |     |     |     |     |     |     |     |     |     |     |   
-METEO* 			|     |     |     |     |     |∎∎∎∎∎|-----|∎∎∎∎∎|∎∎   |     |     |     |   
-				----------------------------------------------------------------------------
-			  5100  5125  5150  5175  5200  5225  5250  5275  5300  5325  5350  5375  5400
+		----------------------------------------------------------------------------
+ORDO_BUS
+		|     ^     |     |     |     |     ^     |     |     |     |     ^     |   
+		|     |¤¤¤¤¤|     |     |     |     |¤¤¤¤¤|     |     |     |     |¤¤¤¤¤|
+		----------------------------------------------------------------------------
+DISTRIB_DONNEES*
+		|     ^     |     |     |     |     ^     |     |     |     |     ^     |   
+		|     |     |¤¤¤¤¤|     |     |     |     |     |  ¤¤¤|¤¤   |     |     |¤¤¤
+		----------------------------------------------------------------------------
+PILOTAGE*
+		|     |     |     |     |     |     ^     |     |     |     |     |     |   
+		|     |     |     |     |     |     |     |     |     |  ¤¤¤|¤¤   |     |   
+		----------------------------------------------------------------------------
+RADIO
+		|     |     |     |     |     |     ^     |     |     |     |     |     |   
+		|     |     |     |     |     |     |     |     |     |     |  ¤¤¤|-----|---
+		----------------------------------------------------------------------------
+CAMERA
+		|     |     |     |     |     |     ^     |     |     |     |     |     |   
+		|¤¤¤¤¤|-----|-----|¤    |     |     |     |     |     |     |     |     |   
+		----------------------------------------------------------------------------
+MESURES*
+		|     |     |     |     |     |     |     |     |     |     |     |     |   
+		|     |     |     | ¤¤¤¤|¤¤¤¤¤|     |     |     |     |     |     |     |   
+		----------------------------------------------------------------------------
+METEO*
+		|     |     |     |     |     |     |     |     |     |     |     |     |   
+		|     |     |     |     |     |¤¤¤¤¤|-----|¤¤¤¤¤|¤¤   |     |     |     |   
+		----------------------------------------------------------------------------
+	  5100  5125  5150  5175  5200  5225  5250  5275  5300  5325  5350  5375  5400
 ```
 
 On voit bien que la priorité de `METEO` est augmentée pour libérer rapidement le bus nécessité par les tâches de priorité plus importante (*héritage de priorité*).
 
-**Question 10** *Fournissez le code complet du programme, en prenant soin de le commenter.
+**Question 10** *Fournissez le code complet du programme, en prenant soin de le commenter.*
 
 ```c
 #include <stdio.h>

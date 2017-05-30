@@ -1,6 +1,9 @@
-# TP1 MI11 Linux Xenomai
+# Compte-rendu TP "Linux Xenomai - Partie 1"
 
-## Exercice 1: Tâches
+**Mewen Michel et Sander Ricou - MI11 UTC**
+
+### Exercice 1 : Tâches
+
 
 *Dans cet exercice, nous allons créer une application simple de type « Hello World » sous Xenomai. L'objectif principal sera de manipuler les tâches temps réel et d'analyser leur fonctionnement.
 
@@ -52,7 +55,7 @@ arm-poky-linux-gnueabi-gcc main_rt.c -o main_rt -I /opt/poky/1.7.3/sysroots/armv
 ```
 
 Code du programme: 
-```
+```c
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/mman.h>
@@ -215,6 +218,7 @@ CPU  PID    MSW     CSW     PF  STAT    %CPU  NAME
   0  0      0       269491  0   00000000  0.0  IRQ68: [timer]
   ```
   
+<<<<<<< HEAD:TP-5to9/TP7.md
 Nous avons observé trois cas différents:
 * *Cas 1:* Aucune fonction en temps réel utilisée
 * *Cas 2:* Seulement la moitié des fonctions en temps réel
@@ -229,6 +233,9 @@ changement de mode (MSW).
 
 
 # Exercice 2 : Synchronisation
+=======
+### Exercice 2 : Synchronisation
+>>>>>>> 1d54cafc7d54fd346b3d81479fd0443efb44f301:TP 5 to 9 - Embedded Linux/report/TP7.md
   
 *Créez un programme lançant deux tâches Xenomai qui afficheront chacune une partie d’un message (chaque tâche ne doit rien faire d’autre).*
 
@@ -583,7 +590,7 @@ CPU  PID    CLASS  PRI    TIMEOUT   TIMEBASE   STAT    NAME
 On remarque que le timer est bien bloqué dans son éxecution (X, le getchar attend une entrée) et que les autres tâches attendent (W).
 Si on met cela en lien avec le fichier de statistiques, on remarque également que 100% du CPU est pour la tâche "ROOT", ce qui est normale car c'est la seul en exécution ("R", running).
 
-# Exercice 3 : Latence
+### Exercice 3 : Latence
 
 *Dans cet exercice, nous allons nous intéresser à la latence de Xenomai, et la comparer avec les résultats du TP précédent.
 
@@ -686,8 +693,7 @@ Min 1000200 ns
 Max 1033240 ns
 
 ```
-Conclusion: L'exécution des attentes d'1ms est correcte, même le maximum est cette fois ci plus proche des 10s. Pour regarder effectivement si Xenomai a de la latence, 
-il faudra charger le CPU.
+Conclusion: L'exécution des attentes d'1ms est correcte, même le maximum est cette fois ci plus proche des 10s. Pour regarder effectivement si Xenomai a de la latence, il faudra charger le CPU.
 
 **Question 3.3 :** *Chargez le CPU et donnez les résultats obtenus. Que pouvez vous en conclure ?*
 
