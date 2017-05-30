@@ -365,7 +365,7 @@ METEO*
 
 On voit bien que la priorité de `METEO` est augmentée pour libérer rapidement le bus nécessité par les tâches de priorité plus importante (*héritage de priorité*).
 
-**Question 10** *Fournissez le code complet du programme, en prenant soin de le commenter.
+**Question 10** *Fournissez le code complet du programme, en prenant soin de le commenter.*
 
 ```c
 #include <stdio.h>
