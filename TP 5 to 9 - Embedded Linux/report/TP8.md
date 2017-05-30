@@ -1,5 +1,7 @@
 # Compte-rendu TP "Linux Xenomai - Partie 2"
 
+**Mewen Michel et Sander Ricou - MI11 UTC**
+
 ### Pathfinder
 
 **Question 1** *Expliquez le principe des fonctions `create_and_start_rt_task`, `rt_task` ainsi que de la structure `task_descriptor`.*

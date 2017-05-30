@@ -1,5 +1,7 @@
 # Compte-rendu TP "Prise en main de Linux embarqué - Partie 1"
 
+**Mewen Michel et Sander Ricou - MI11 UTC**
+
 ### Exercice 1
 **Question 1.1** *Écrivez les caractéristiques de la carte.*
 

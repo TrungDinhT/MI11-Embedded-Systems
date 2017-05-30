@@ -1,5 +1,7 @@
 # Compte-rendu TP "Linux Xenomai - Partie 1"
 
+**Mewen Michel et Sander Ricou - MI11 UTC**
+
 ### Exercice 1 : Tâches
 
 Dans cet exercice, nous allons créer une application simple de type « Hello World » sous Xenomai.
@@ -55,7 +57,7 @@ librairies native et xenomai.
 programme.
 
 Code du programme: 
-```
+```c
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/mman.h>

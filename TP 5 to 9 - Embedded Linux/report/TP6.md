@@ -1,5 +1,7 @@
 # Compte-rendu TP "Prise en main de Linux embarqué - Partie 2"
 
+**Mewen Michel et Sander Ricou - MI11 UTC**
+
 ### Exercice 1 : Hello Word
 On a créé notre fichier main.c, puis on le compile:
 
