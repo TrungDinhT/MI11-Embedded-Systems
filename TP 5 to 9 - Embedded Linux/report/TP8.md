@@ -289,7 +289,7 @@ METEO*
 
 Pour résoudre l'inversion de priorité, il faut élever temporairement la priorité de `METEO` au niveau de `DISTRIBDONNEES`. Il faut donc utiliser un mécanisme de synchronisation qui fait de l'héritage de priorité : le mutex. Celui-ci est utile pour les ressources partagées car il gère les priorités. Le sémaphore, lui, sert plutôt pour la synchronisation des tâches.
 
-**Question 9** *Testez et commentez le résultat.
+**Question 9** *Testez et commentez le résultat.*
 
 L'exécution de nos tâches avec un mutex sur la ressource et un temps de calcul de 60ms pour `METEO` donne le résultat suivant :
 ```
