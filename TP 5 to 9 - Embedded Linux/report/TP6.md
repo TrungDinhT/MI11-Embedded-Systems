@@ -1,4 +1,6 @@
-# Exercice 1: Hello Word
+# Compte-rendu TP "Prise en main de Linux embarqué - Partie 2"
+
+### Exercice 1 : Hello Word
 On a créé notre fichier main.c, puis on le compile:
 
 ```
@@ -60,7 +62,7 @@ Terminal:
 Hello World
 ```
 
-# Exercice 2 : Clignotement des LEDs
+### Exercice 2 : Clignotement des LEDs
 
 Nous allons maintenant manipuler les périphériques de la cible. Pour que ce soit visuel, nous allons
 nous attaquer aux traditionnelles LEDs. Trois sont présentes sur la carte de développement, la rouge
@@ -144,7 +146,7 @@ scp led root@192.168.1.6:/home/root/
 ./led
 ```
 
-# Exercice 3 : Boutons poussoirs
+### Exercice 3 : Boutons poussoirs
 #### Question 3.1 : Combien y a t-il de boutons poussoirs sur la cible ? Comment y accède t-on ?
 Il y a 4 boutons poussoirs sur la cible:
 ```
@@ -278,7 +280,7 @@ int main(int argc, char *argv[]) {
 }
 ```
 
-# Exercice 4 : Charge CPU
+### Exercice 4 : Charge CPU
 Cet exercice va vous permettre de vérifier l'incidence de la charge CPU sur une tâche périodique. 
 
 Ecrivez donc un programme réalisant 10 000 fois une attente de 1ms. Utilisez les fonctions gettimeofday et timersub pour mesurer le temps total. Utilisez maintenant la commande stress pour charger le CPU.

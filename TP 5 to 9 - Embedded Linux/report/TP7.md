@@ -1,4 +1,6 @@
-# Exercice 1: Tâches
+# Compte-rendu TP "Linux Xenomai - Partie 1"
+
+### Exercice 1 : Tâches
 
 Dans cet exercice, nous allons créer une application simple de type « Hello World » sous Xenomai.
 L'objectif principal sera de manipuler les tâches temps réel et d'analyser leur fonctionnement.
@@ -226,7 +228,7 @@ CPU  PID	  MSW    	CSW    	PF	STAT   	%CPU  NAME
   0  0  	  0      	269491 	0 	00000000	0.0  IRQ68: [timer]
   ```
   
-# Exercice 2 : Synchronisation
+### Exercice 2 : Synchronisation
   
 Créez un programme lançant deux tâches Xenomai qui afficheront chacune une partie d’un message
 (chaque tâche ne doit rien faire d’autre).
@@ -587,7 +589,7 @@ CPU  PID	CLASS  PRI  	TIMEOUT   TIMEBASE   STAT   	NAME
 ```
 -> on voit que le timer est bien bloqué dans son éxecution (X, le getchar attend une entrée) et que les autres tâches attendent (W).
 
-# Exercice 3 : Latence
+### Exercice 3 : Latence
 
 Dans cet exercice, nous allons nous intéresser à la latence de Xenomai, et la comparer avec les
 résultats du TP précédent.

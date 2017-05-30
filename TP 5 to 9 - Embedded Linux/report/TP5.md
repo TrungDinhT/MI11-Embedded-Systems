@@ -1,4 +1,4 @@
-# MI11 - Rapport TP 5
+# Compte-rendu TP "Prise en main de Linux embarqué - Partie 1"
 
 ### Exercice 1
 **Question 1.1** *Écrivez les caractéristiques de la carte.*
@@ -9,16 +9,18 @@ On trouve ces informations dans le manuel utilisateur p.9 et 10. En plus du proc
 * Périphériques : port LAN, interface entrée/sortie audio, USB OTG, USB HOST, interfaces CAN, RS485, SPI, IIC, ADC, GPMC, JTAG, TF slot, serial port, TFT LCD, écran tactile et clavier.
 
 *Quelle est la référence du processeur de la carte, quelle est sa fréquence et son architecture ?*
+
 * Référence : `AM3359 Cortex A8`
 * Fréquence : 720 MHz
 * Architecture : `ARM 32 Bit RISC` (*Reduced Instruction Set Computer*)
 
 *Quelle est la quantité de mémoire vive sur la carte ?*
+
 Il y a 512MB de SDRAM en DDR3.
 
 **Question 1.2** *Quelles sont les différentes possibilités pour stocker le noyau et le système de fichiers nécessaires pour démarrer la carte ?*
 
-* Boot sur un périphérique bloc standard (cours slide 49) :
+* Boot sur un périphérique bloc standard (cf. cours slide 49) :
     * Flash
     * Carte SD
 * Boot dans un ramdisk :
@@ -111,7 +113,7 @@ Si le fichier était présent, la cible chargerait son noyau grace à TFTP pour 
 
 *Quel serait le problème suivant ?*
 
-Il faudrait que la cible trouve le système de fichier sur le serveur NFS. La configuration de celui-ci est correcte sur notre VM mais le dossier contenant le filesystem de la cible (`/tftpboot/rootfs/`) est vide.
+Il faudrait que la cible trouve le système de fichier sur le serveur NFS. La configuration de celui-ci est correcte sur notre VM mais le dossier contenant le système de fichiers de la cible (`/tftpboot/rootfs/`) est vide.
 
 ### Exercice 2
 **Question 2.1** *Analysez brièvement le contenu des dossiers suivants :*
@@ -188,7 +190,7 @@ sudo ./poky-glibc-x86_64-meta-toolchain-armv7a-vfp-neon-toolchain-1.7.3.sh
 
 Il faut  :
 - mettre l'`uImage` dans `/tftpboot/`
-- extraire `core-image-base-devkit8600.tar.bz2` dans /tftpboot/rootfs
+- extraire `core-image-base-devkit8600.tar.bz2` dans `/tftpboot/rootfs`
 
 **Question 3.2** *Décrivez le processus de boot complet de la cible.*
 
@@ -649,12 +651,13 @@ O0:12345:respawn:/sbin/getty -L 115200 ttyO0
 ```
 
 *A quoi correspond le numéro que l'on trouve en début de ligne dans le fichier /proc/devices ?*
+
 Ce numéro correspond au majeur. Selon le cours, le numéro majeur correspond à un type de périphérique (un numéro par driver) et le numéro mineur correspond à un périphérique particulier parmi plusieurs de même type (les numéros mineurs sont donc gérés par un même driver).
 
 On peut retrouver ces majeurs et mineurs dans `/dev` :
-`ls ­l /dev`
+`ls ­-l /dev`
 
-**Question 3.5** *Analysez le contenu de /bin, /sbin, /usr/bin et /usr/sbin. Qu'y a t-il de particulier ? Quel est l'avantage ?*
+**Question 3.5** *Analysez le contenu de `/bin`, `/sbin`, `/usr/bin` et `/usr/sbin`. Qu'y a t-il de particulier ? Quel est l'avantage ?*
 
 ```
 ls /bin
@@ -902,26 +905,7 @@ Architecture specific targets (arm):
   am200epdkit_defconfig    - Build for am200epdkit
   am335x_evm_defconfig     - Build for am335x_evm
   ap4evb_defconfig         - Build for ap4evb
-  assabet_defconfig        - Build for assabet
-  at91cap9adk_defconfig    - Build for at91cap9adk
-  at91rm9200_defconfig     - Build for at91rm9200
-  at91sam9260ek_defconfig  - Build for at91sam9260ek
-  at91sam9261_defconfig    - Build for at91sam9261
-  at91sam9263_defconfig    - Build for at91sam9263
-  at91sam9g20ek_defconfig  - Build for at91sam9g20ek
-  at91sam9rlek_defconfig   - Build for at91sam9rlek
-  at91x40_defconfig        - Build for at91x40
-  badge4_defconfig         - Build for badge4
-  bcmring_defconfig        - Build for bcmring
-  cam60_defconfig          - Build for cam60
-  cerfcube_defconfig       - Build for cerfcube
-  cm_x2xx_defconfig        - Build for cm_x2xx
-  cm_x300_defconfig        - Build for cm_x300
-  cns3420vb_defconfig      - Build for cns3420vb
-  colibri_pxa270_defconfig - Build for colibri_pxa270
-  colibri_pxa300_defconfig - Build for colibri_pxa300
-  collie_defconfig         - Build for collie
-  corgi_defconfig          - Build for corgi
+...
   cpu9260_defconfig        - Build for cpu9260
   cpu9g20_defconfig        - Build for cpu9g20
   da8xx_omapl_defconfig    - Build for da8xx_omapl
@@ -933,89 +917,7 @@ Architecture specific targets (arm):
   edb7211_defconfig        - Build for edb7211
   em_x270_defconfig        - Build for em_x270
   ep93xx_defconfig         - Build for ep93xx
-  eseries_pxa_defconfig    - Build for eseries_pxa
-  exynos4_defconfig        - Build for exynos4
-  ezx_defconfig            - Build for ezx
-  footbridge_defconfig     - Build for footbridge
-  fortunet_defconfig       - Build for fortunet
-  g3evm_defconfig          - Build for g3evm
-  g4evm_defconfig          - Build for g4evm
-  h3600_defconfig          - Build for h3600
-  h5000_defconfig          - Build for h5000
-  h7201_defconfig          - Build for h7201
-  h7202_defconfig          - Build for h7202
-  hackkit_defconfig        - Build for hackkit
-  imote2_defconfig         - Build for imote2
-  integrator_defconfig     - Build for integrator
-  iop13xx_defconfig        - Build for iop13xx
-  iop32x_defconfig         - Build for iop32x
-  iop33x_defconfig         - Build for iop33x
-  ixp2000_defconfig        - Build for ixp2000
-  ixp23xx_defconfig        - Build for ixp23xx
-  ixp4xx_defconfig         - Build for ixp4xx
-  jornada720_defconfig     - Build for jornada720
-  kirkwood_defconfig       - Build for kirkwood
-  ks8695_defconfig         - Build for ks8695
-  lart_defconfig           - Build for lart
-  lpd270_defconfig         - Build for lpd270
-  lubbock_defconfig        - Build for lubbock
-  mackerel_defconfig       - Build for mackerel
-  magician_defconfig       - Build for magician
-  mainstone_defconfig      - Build for mainstone
-  mini2440_defconfig       - Build for mini2440
-  mmp2_defconfig           - Build for mmp2
-  msm_defconfig            - Build for msm
-  mv78xx0_defconfig        - Build for mv78xx0
-  mx1_defconfig            - Build for mx1
-  mx21_defconfig           - Build for mx21
-  mx27_defconfig           - Build for mx27
-  mx3_defconfig            - Build for mx3
-  mx51_defconfig           - Build for mx51
-  mxs_defconfig            - Build for mxs
-  neponset_defconfig       - Build for neponset
-  netwinder_defconfig      - Build for netwinder
-  netx_defconfig           - Build for netx
-  nhk8815_defconfig        - Build for nhk8815
-  nuc910_defconfig         - Build for nuc910
-  nuc950_defconfig         - Build for nuc950
-  nuc960_defconfig         - Build for nuc960
-  omap1_defconfig          - Build for omap1
-  omap2plus_defconfig      - Build for omap2plus
-  orion5x_defconfig        - Build for orion5x
-  palmz72_defconfig        - Build for palmz72
-  pcm027_defconfig         - Build for pcm027
-  pcontrol_g20_defconfig   - Build for pcontrol_g20
-  pleb_defconfig           - Build for pleb
-  pnx4008_defconfig        - Build for pnx4008
-  pxa168_defconfig         - Build for pxa168
-  pxa255-idp_defconfig     - Build for pxa255-idp
-  pxa3xx_defconfig         - Build for pxa3xx
-  pxa910_defconfig         - Build for pxa910
-  qil-a9260_defconfig      - Build for qil-a9260
-  raumfeld_defconfig       - Build for raumfeld
-  realview_defconfig       - Build for realview
-  realview-smp_defconfig   - Build for realview-smp
-  rpc_defconfig            - Build for rpc
-  s3c2410_defconfig        - Build for s3c2410
-  s3c6400_defconfig        - Build for s3c6400
-  s5p64x0_defconfig        - Build for s5p64x0
-  s5pc100_defconfig        - Build for s5pc100
-  s5pv210_defconfig        - Build for s5pv210
-  sam9_l9260_defconfig     - Build for sam9_l9260
-  shannon_defconfig        - Build for shannon
-  shark_defconfig          - Build for shark
-  simpad_defconfig         - Build for simpad
-  spear3xx_defconfig       - Build for spear3xx
-  spear6xx_defconfig       - Build for spear6xx
-  spitz_defconfig          - Build for spitz
-  stamp9g20_defconfig      - Build for stamp9g20
-  tct_hammer_defconfig     - Build for tct_hammer
-  tegra_defconfig          - Build for tegra
-  tisdk_am335x-evm_defconfig - Build for tisdk_am335x-evm
-  trizeps4_defconfig       - Build for trizeps4
-  u300_defconfig           - Build for u300
-  u8500_defconfig          - Build for u8500
-  usb-a9260_defconfig      - Build for usb-a9260
+...
   versatile_defconfig      - Build for versatile
   vexpress_defconfig       - Build for vexpress
   viper_defconfig          - Build for viper
