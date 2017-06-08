@@ -16,7 +16,7 @@
  *--------------------------------------------------------------------------*/
 static int compteurs[MAX_TACHES]; /* Compteurs d'activations */
 CONTEXTE _contexte[MAX_TACHES];   /* tableau des contextes */
-volatile uint16_t _tache_c;       /* numéro de tache courante */
+volatile uint16_t _tache_c;       /* numï¿½ro de tache courante */
 uint32_t  _tos;                   /* adresse du sommet de pile */
 int  _ack_timer = 1;              /* = 1 si il faut acquitter le timer */
 
@@ -26,11 +26,11 @@ int  _ack_timer = 1;              /* = 1 si il faut acquitter le timer */
 void	noyau_exit(void)
 {
   int j;
-  _irq_disable_();                /* Désactiver les interruptions */
+  _irq_disable_();                /* Dï¿½sactiver les interruptions */
   printf("Sortie du noyau\n");
   for (j=0; j < MAX_TACHES; j++)
     printf("\nActivations tache %d : %d", j, compteurs[j]);
-  for(;;);                        /* Terminer l'exécution */
+  for(;;);                        /* Terminer l'exï¿½cution */
 }
 
 /*--------------------------------------------------------------------------*
@@ -117,7 +117,7 @@ void  active( uint16_t tache )
 /*--------------------------------------------------------------------------*
  *                  ORDONNANCEUR preemptif optimise                         *
  *                                                                          *
- *             !! Cette fonction doit s'exécuter en mode IRQ !!             *
+ *             !! Cette fonction doit s'exï¿½cuter en mode IRQ !!             *
  *  !! Pas d'appel direct ! Utiliser schedule pour provoquer une            *
  *  commutation !!                                                          *
  *--------------------------------------------------------------------------*/
@@ -134,7 +134,7 @@ void __attribute__((naked)) scheduler( void )
       "mrs    r0, spsr\t\n"       /* Sauvegarde de spsr_irq */
       "stmfd  sp!, {r0, lr}\t\n");/* et de lr_irq */
 
-  if (_ack_timer)                 /* Réinitialiser le timer si nécessaire */
+  if (_ack_timer)                 /* Rï¿½initialiser le timer si nï¿½cessaire */
   {
     register struct imx_timer* tim1 = (struct imx_timer *) TIMER1_BASE;
     tim1->tstat &=~TSTAT_COMP;
@@ -148,20 +148,20 @@ void __attribute__((naked)) scheduler( void )
   _tache_c = suivant();           /* recherche du suivant */
   if (_tache_c == F_VIDE)
   {
-    printf("Plus rien à ordonnancer.\n");
+    printf("Plus rien a ordonnancer.\n");
     noyau_exit();                 /* Sortie du noyau */
   }
-  compteurs[_tache_c]++;          /* Incrémenter le compteur d'activations  */
+  compteurs[_tache_c]++;          /* Incrï¿½menter le compteur d'activations  */
   p = &_contexte[_tache_c];       /* p pointe sur la nouvelle tache courante*/
 
   if (p->status == PRET)          /* tache prete ? */
   {
     sp = p->sp_ini;               /* Charger sp_irq initial */
-    _set_arm_mode_(ARMMODE_SYS);  /* Passer en mode système */
+    _set_arm_mode_(ARMMODE_SYS);  /* Passer en mode systï¿½me */
     sp = p->sp_ini - PILE_IRQ;    /* Charger sp_sys initial */
     p->status = EXEC;             /* status tache -> execution */
     _irq_enable_();               /* autoriser les interuptions   */
-    (*p->tache_adr)();            /* lancement de la tâche */
+    (*p->tache_adr)();            /* lancement de la tï¿½che */
   }
   else
   {
@@ -182,7 +182,7 @@ void __attribute__((naked)) scheduler( void )
 /*--------------------------------------------------------------------------*
  *                  --- Provoquer une commutation ---                       *
  *                                                                          *
- *             !! Cette fonction doit s'exécuter en mode IRQ !!             *
+ *             !! Cette fonction doit s'exï¿½cuter en mode IRQ !!             *
  *  !! Pas d'appel direct ! Utiliser schedule pour provoquer une            *
  *  commutation !!                                                          *
  *--------------------------------------------------------------------------*/
@@ -190,14 +190,14 @@ void  schedule( void )
 {
   _lock_();                         /* Debut section critique */
 
-  /* On simule une exception irq pour forcer un appel correct à scheduler().*/
+  /* On simule une exception irq pour forcer un appel correct ï¿½ scheduler().*/
   _ack_timer = 0;
   _set_arm_mode_(ARMMODE_IRQ);      /* Passer en mode IRQ */
   __asm__ __volatile__(
       "mrs  r0, cpsr\t\n"           /* Sauvegarder cpsr dans spsr */
       "msr  spsr, r0\t\n"
       "add  lr, pc, #4\t\n"         /* Sauvegarder pc dans lr et l'ajuster */
-      "b    scheduler\t\n"          /* Saut à scheduler */
+      "b    scheduler\t\n"          /* Saut ï¿½ scheduler */
       );
   _set_arm_mode_(ARMMODE_SYS);      /* Repasser en mode system */
 
@@ -228,14 +228,14 @@ void	start( TACHE_ADR adr_tache )
   _tache_c = 0;                     /* initialisation de la tache courante */
   file_init();                      /* initialisation de la file           */
 
-  _tos = sp;                        /* Haut de la pile des tâches */
+  _tos = sp;                        /* Haut de la pile des tï¿½ches */
   _set_arm_mode_(ARMMODE_IRQ);      /* Passer en mode IRQ */
   sp = _tos;                        /* sp_irq initial */
   _set_arm_mode_(ARMMODE_SYS);      /* Repasser en mode SYS */
 
   _irq_disable_();                  /* on interdit les interruptions */
 
-  /* Initialisation du timer à 100 Hz */
+  /* Initialisation du timer ï¿½ 100 Hz */
   tim1->tcmp = 10000;
   tim1->tprer = 0;
   tim1->tctl |= TCTL_TEN | TCTL_IRQEN | TCTL_CLKSOURCE_PERCLK16;
@@ -248,10 +248,10 @@ void	start( TACHE_ADR adr_tache )
 
 
 /*-------------------------------------------------------------------------*
- *                    --- Endormir la tâche courante ---                   *
+ *                    --- Endormir la tï¿½che courante ---                   *
  * Entree : Neant                                                          *
  * Sortie : Neant                                                          *
- * Descrip: Endort la tâche courante et attribue le processeur à la tâche  *
+ * Descrip: Endort la tï¿½che courante et attribue le processeur ï¿½ la tï¿½che  *
  *          suivante.                                                      *
  *                                                                         *
  * Err. fatale:Neant                                                       *
@@ -260,16 +260,29 @@ void	start( TACHE_ADR adr_tache )
 
 void  dort(void)
 {
- 
+	CONTEXTE *p;
+	_lock_();
+	p = &_contexte[_tache_c];
+
+	if (p->status == NCREE)
+	  noyau_exit();
+
+	if (p->status == EXEC) {
+		p->status = SUSP;
+		retire(_tache_c);
+		schedule();
+	}
+	_unlock_();
+
 }
 
 /*-------------------------------------------------------------------------*
- *                    --- Réveille une tâche ---                           *
- * Entree : numéro de la tâche à réveiller                                 *
+ *                    --- Rï¿½veille une tï¿½che ---                           *
+ * Entree : numï¿½ro de la tï¿½che ï¿½ rï¿½veiller                                 *
  * Sortie : Neant                                                          *
- * Descrip: Réveille une tâche. Les signaux de réveil ne sont pas mémorisés*
+ * Descrip: Rï¿½veille une tï¿½che. Les signaux de rï¿½veil ne sont pas mï¿½morisï¿½s*
  *                                                                         *
- * Err. fatale:tâche non créée                                             *
+ * Err. fatale:tï¿½che non crï¿½ï¿½e                                             *
  *                                                                         *
  *-------------------------------------------------------------------------*/
 
@@ -277,5 +290,17 @@ void  dort(void)
 void reveille(uint16_t t)
 {
   CONTEXTE *p;
+  _lock_();
+  p = &_contexte[t];
 
+  // printf("Statut de %d = %d.\n", t, p->status);
+  if (p->status == NCREE)
+    noyau_exit();
+
+  if (p->status == SUSP) {
+	p->status = EXEC;
+	ajoute(t);
+	schedule();
+  }
+  _unlock_();
 }
