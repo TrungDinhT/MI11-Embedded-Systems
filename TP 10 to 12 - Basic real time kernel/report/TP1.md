@@ -1,49 +1,49 @@
-# TP Noyau TR ARM
+# Compte-rendu TP "Réalisation d’un mini noyau temps réel - Partie 1 et 2"
 
-On ouvre le fichier noyau.c pour l'étudier.
+**Mewen Michel et Sander Ricou - MI11 UTC**
 
-## Première partie, Réalisation d’un mini noyau temps réel ARM
+Le but de ce TP est de comprendre un noyau temps réel simple et de réaliser un ordonnanceur de tâches fonctionnant en harmonie avec le premier.
 
 ### 1ère partie : Ordonnanceur de tâches
 
-Etudions le fichier NOYAUFIL.C:
+Etudions le fichier `noyaufil.c`. Nous devons compléter les fonctions vides suivantes :
 
-*
-*file_init() : initialise la file. _queue contient une valeur de tâche impossible, F_VIDE, indiquant ainsi que la file est vide.
-*ajoute(n) : ajoute la tâche n en fin de file, elle sera la dernière à être activée
-	-> on ajoute la nouvelle tâche après celle en exécution
+* `file_init()` : initialise la file de tâches
+* `ajoute(uint16 n)` : ajoute la tâche `n` en fin de file
+* `suivant()` : retourne la tâche à activer
+* `retire(uint16 n)` : retire la tâche n de la file sans modifier l’ordre.
 
-*suivant() : retourne la tâche à activer, et met à jour _queue pour qu’elle pointe sur la suivante.
-*retire(n) : retire la tâche n de la file sans en modifier l’ordre.
+Dans le code, `_queue` est le numéro de la tâche actuellement active. `_file[n]` nous donne la tâche suivante de la tâche `n`.
 
-file_init():
 ```c
 void    file_init( void )
 {
     _queue = F_VIDE;
     for(int i = 0; i < MAX_TACHES; i++) {
-   	 _file[i] = F_VIDE;
+     _file[i] = F_VIDE;
     }
 }
 ```
+Pour initialiser la file, on attribue à chaque case et à la `_queue` une valeur de tâche impossible, `F_VIDE`. Cela nous permettra par la suite de reconnaître cette valeur.
 
-ajoute(n):
 ```c
 void    ajoute ( uint16_t n )
 {
     if(_queue != F_VIDE) {
-   	 uint16_t tmp = _file[_queue];
-   	 _file[_queue] = n;
-   	 _file[n] = tmp;
+     uint16_t tmp = _file[_queue];
+     _file[_queue] = n;
+     _file[n] = tmp;
     } else {
-   	 _file[n] = n;
+     _file[n] = n;
     }
     _queue = n;
 }
 
 ```
+Deux cas se présentent quand on souhaite ajouter une tâche à la file actuelle :
+  - soit la queue n'est pas initialisée : on ajoute donc la tâche au tableau en l'indiquant elle même en tant que tâche suivante et on fait pointer `_queue` sur `n`.
+  - soit la queue est déjà initialisée : on garde `tmp`, la prochaine tâche à exécuter. La tâche qui suivra la tâche courante sera donc `n` (la nouvelle tâche) et la tâche qui suivra la tâche `n` est donc `tmp`. Finalement, on défini la tâche courante `_queue` à `n` pour que la tâche suivante soit correcte (ie. qu'on exécute bien `tmp` au prochain appel à `suivant()`).
 
-suivant():
 ```c
 uint16_t    suivant( void )
 {
@@ -52,51 +52,50 @@ uint16_t    suivant( void )
 }
 
 ```
+On prend la valeur de la prochaine tâche à exécuter, on l'enregistre dans `_queue` et on la retourne.
 
-retire(n):
 ```c
 void    retire( uint16_t t )
 {
     int tmp;
     for(int i = 0; i < MAX_TACHES; i++) {
-   	 if(_file[i] == t){
-   		 tmp = i;
-   		 break;
-   	 }
+     if(_file[i] == t){
+       tmp = i;
+       break;
+     }
     }
     _file[tmp] = _file[t];
     _file[t] = F_VIDE;
 }
 ```
+On trouve `tmp`, la tâche qui précède `t` et on lui donne pour tâche suivante la tâche suivant `t`. On oublie pas de mettre la valeur de `_file[t]` à vide.
 
-affic_queue():
+Les deux fonctions suivantes permettent d'afficher le contenu de la file afin de la débugger.
+
 ```c
 void affic_queue( void )
 {
     printf("Tache active / queue = %d", _queue);
 }
-```
 
-affic_file():
-```c
 void affic_file( void )
 {
     if(_queue == F_VIDE){
-   	 print("File vide");
-   	 return;
+     print("File vide");
+     return;
     }
 
     int i = _queue;
 
     do {
-   	 print("%d -> %d", i, _file[i]);
-   	 i = _file[i];
+     print("%d -> %d", i, _file[i]);
+     i = _file[i];
     } while (i != _queue);
 }
 ```
 
 
-Ecrire programme de test, TESTFIL.C:
+Nous avons donc écrit un programme de test, `testfil.c`, reprenant l'exemple du sujet :
 
 ```c
 #include <stdint.h>
@@ -133,7 +132,7 @@ void main() {
 
 ```
 
-résultat:
+Qui nous donne le résultat -satisfaisant- suivant :
 ```
 2 -> 3
 3 -> 5
@@ -159,7 +158,6 @@ Tache active / queue = 3
 3 -> 6
 Tache active / queue = 6
 ```
-Nous avons repris l'exemple et nous arrivons grâce à nos fonctions à le reproduire correctement.
 
 ### 2ème partie : gestion et commutation de tâches
 
