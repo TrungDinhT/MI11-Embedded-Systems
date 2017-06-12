@@ -141,6 +141,20 @@ extern  void      retire      ( uint16_t t );
 extern  uint16_t  suivant     ( void );
 extern  void      affic_queue ( void );
 extern  void      affic_file  ( void );
+
+extern  void      file_circ_init   ( void );
+extern  int16_t  file_circ_push      ( uint16_t n );
+extern  int16_t  file_circ_pop      ();
+extern  void      affic_file_circ  ( void );
+extern  char file_empty();
+extern  char file_full();
+extern  char	file_nearly_full();
+extern  char	file_nearly_empty();
+/*
+extern  uint16_t	get_nb_empty();
+extern  uint16_t	get_nb_max();
+*/
+
 extern  void      noyau_exit  ( void );
 extern  void      fin_tache   ( void );
 extern  uint16_t  cree        ( TACHE_ADR adr_tache );
