@@ -27,7 +27,10 @@ fs.readdir(path, function(err, items) {
 			for (var j=0; j < mdFiles.length; j++) {
 				let mdFile = subPath + mdFiles[j];
 
-				markdownpdf({ paperFormat: "A4" }).from(mdFile).to(mdFile.replace(".md", ".pdf"), function () {
+				markdownpdf({
+					paperFormat: "A4",
+					cwd: subPath
+				}).from(mdFile).to(mdFile.replace(".md", ".pdf"), function () {
 					console.log(mdFile + " exported to pdf");
 				}.bind(mdFile))
 			}
