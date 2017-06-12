@@ -62,28 +62,31 @@ TACHE	diner(void)
 }
 
 ```
-Dans une première version, les opérations sur les fourchettes n'étaient réalisées que si l'on pouvez accéder en même temps aux deux fourchettes. Or cela crée une situation d'interblocage, en effet quand on arrive à avoir accès à la fourchette gauche on attend également d'avoir accès la celle de droite (problème si celle-ci n'est pas accessible). Ainsi si tous les philosophes effectuent la situation précédente, chacun vérouille la fouchette à sa gauche et on se retrouve en interblocage.
+Dans une première version, les opérations sur les fourchettes n'étaient réalisées que si l'on pouvez accéder en même temps aux deux fourchettes. Or cela crée une situation d'interblocage, en effet quand on arrive à avoir accès à la fourchette gauche on attend également d'avoir accès la celle de droite (problème si celle-ci n'est pas accessible). Ainsi si tous les philosophes effectuent la situation précédente, chacun verrouille la fourchette à sa gauche et on se retrouve en interblocage.
 Le code suivant est donc problématique:
 ```c
-    /*
-    // Attention, créer une jolie situation d'interblocage !
-    s_wait(leftFork);
-    s_wait(rightFork);
-    
-    forks[leftFork] = FREE;
-    forks[rightFork] = FREE;
-    
-    s_signal(leftFork);
-    s_signal(rightFork);
-    */
-```    
+// Attention, créer une jolie situation d'interblocage !
+s_wait(leftFork);
+s_wait(rightFork);
+
+forks[leftFork] = FREE;
+forks[rightFork] = FREE;
+
+s_signal(leftFork);
+s_signal(rightFork);
+```
+
 Cette situation peut être illustrée par le schéma suivant:
 ![schema](./philo.png)
 
 Détaillons maintenant la tâche philosophe:
+
 Chaque philosophe se voit attribuer une fourchette gauche et une fourchette droite, puis le philosophe rentre dans sa phase de réflexion (`wait(THINK_TIME * _tache_c * _tache_c)`), et se retrouve donc en situation de faim à la fin de celle-ci.
-C'est donc le moment pour le philosophe d'essayer d'accèder aux états des ces fourchettes voisines afin d'écrire qu'elles sont utilisées. Tant qu'il n'a pas réussi à récupérer les deux fourchettes en même temps, il réessaie en attendant un court instant à chaque fois (`wait(RETRY_TIME)`).
-Notons que si le philosophe accède à une fourchette à l'état `TAKEN`, son accès est tout de suite libérer (éviter un interblocage). C'est seulement quand il accède aux deux fourchettes dans un état `FREE` qu'il va alors se les approprier (écriture de `TAKEN`) et libérer ensuite l'accès aux états des fourchettes. Puis on simule une durée pendant laquelle le philosophe mange (`wait(EAT_TIME)`). A la fin de cette attente, le philosophe va libérer les fourchettes l'une après l'autre (pour éviter la situation d'interblocage détailler précédemment).
+
+C'est donc le moment pour le philosophe d'essayer d'accèder aux états des fourchettes auxquelles il peut accéder afin d'écrire qu'elles sont utilisées. Tant qu'il n'a pas réussi à récupérer les deux fourchettes en même temps, il réessaie en attendant un court instant à chaque fois (`wait(RETRY_TIME)`).
+
+Notons que si le philosophe accède à une fourchette à l'état `TAKEN`, son accès est tout de suite libéré (afin d'éviter un interblocage). C'est seulement quand il accède aux deux fourchettes dans un état `FREE` qu'il va alors se les approprier (écriture de `TAKEN`) et libérer ensuite l'accès aux états des fourchettes. Puis on simule une durée pendant laquelle le philosophe mange (`wait(EAT_TIME)`). A la fin de cette attente, le philosophe va libérer les fourchettes l'une après l'autre (pour éviter la situation d'interblocage détaillée précédemment).
+
 Et suite à cela le philosophe se remet à penser...
 
 Voici ci-dessous notre version finale de la tâche philosophe:
@@ -93,7 +96,7 @@ TACHE	philosophe()
 {
 	ushort leftFork = sems[_tache_c-1];
 	ushort rightFork = sems[_tache_c];
-	printf("------> DEBUT Phil%d ayant acces aux fourchetes fourchettes %d et %d\n", _tache_c, leftFork, rightFork);
+	printf("------> DEBUT Phil%d ayant acces aux fourchettes %d et %d\n", _tache_c, leftFork, rightFork);
     while(1) {
         printf("[%d] pense\n", _tache_c);
         wait(THINK_TIME * _tache_c * _tache_c);

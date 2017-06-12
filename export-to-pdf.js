@@ -19,7 +19,9 @@ fs.readdir(path, function(err, items) {
 		if (stats.isDirectory()) {
 			var items = fs.readdirSync(subPath);
 
-			var mdFiles = items.filter( (i) => { return i.indexOf(".md") != -1; } );
+			var allMdFiles = items.filter( (i) => { return i.indexOf(".md") != -1; } );
+			var pdfFiles = items.filter( (i) => { return i.indexOf(".pdf") != -1; } );
+			var mdFiles = allMdFiles.filter( (i) => { return pdfFiles.indexOf(i.split(".")[0] + ".pdf") == -1; } );
 			console.log("Found those files in \"" + subPath + "\" :");
 			console.log("\t" + mdFiles.join("\n\t"));
 
