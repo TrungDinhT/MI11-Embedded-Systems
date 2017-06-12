@@ -61,3 +61,9 @@ On réalise maintenant un producteur et un consommateur selon les besoins défin
 Le producteur va s'endormir si le nombre de places vides est nul et il va réveiller le consommateur s'il y a un seul item dans la file. Le consommateur va s'endormir si le nombre places vides est égal à la taille de la file et va réveiller le producteur s'il n'y a plus qu'une place vide. Il peut donc y avoir les 2 tâches lancées en même temps mais elles ne peuvent pas être éteintes en même temps !
 
 On va donc s'inspirer de notre file du TP précédent pour que les deux tâches se transmettent des entiers. En dehors de cette communication, on va les occuper pour simuler la préparation et le traitement des données.
+
+
+
+ATTENTION !!
+FIFO qu'on a faite --> pas très optimisée
+Sémaphore permet d'avoir plusieurs producteurs et consommateurs sur la même ressource
