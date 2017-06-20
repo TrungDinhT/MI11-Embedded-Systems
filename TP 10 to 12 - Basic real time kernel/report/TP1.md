@@ -175,14 +175,14 @@ void  start( TACHE_ADR adr_tache )
   _tache_c = 0;                     /* initialisation de la tache courante */
   file_init();                      /* initialisation de la file           */
 
-  _tos = sp;                        /* Haut de la pile des t�ches */
+  _tos = sp;                        /* Haut de la pile des tâches */
   _set_arm_mode_(ARMMODE_IRQ);      /* Passer en mode IRQ */
   sp = _tos;                        /* sp_irq initial */
   _set_arm_mode_(ARMMODE_SYS);      /* Repasser en mode SYS */
 
   _irq_disable_();                  /* on interdit les interruptions */
 
-  /* Initialisation du timer � 100 Hz */
+  /* Initialisation du timer à 100 Hz */
   tim1->tcmp = 10000;
   tim1->tprer = 0;
   tim1->tctl |= TCTL_TEN | TCTL_IRQEN | TCTL_CLKSOURCE_PERCLK16;
@@ -194,13 +194,16 @@ void  start( TACHE_ADR adr_tache )
 }
 
 ```
-On appelle `start()` pour démarrer notre noyau avec une tâche départ. `adr_tache` est l'adresse à laquelle se trouve la fonction de la tâche de départ. Dans l'ordre, on va donc :
-* récupérer le pointeur de pile
-* pour chaque tâche dans la tableau contexte, initialiser leur etat à NCREE car aucune tâche n'est créée au départ
-* initialiser la tâche courante à zéro : certains noyaux TR ont une tâche de fond mais ici il n'y en a pas... Ici, par défaut, la première tâche avec laquelle on active le noyau est positionnée en 0 des différents tableaux utilisés dans le code (_contexte, compteurs d'activations). De plus, quand on crée une tâche (voir la fonction `cree()` ci-dessous) l'identifiant généré `tache` commence bien à 0 puis est incrémenté de 1 à chaque nouvelle création.
-* initialisation de notre file avec la fonction créée précédemment
-* 
 
+On appelle `start()` pour démarrer notre noyau avec une tâche départ. `adr_tache` est l'adresse à laquelle se trouve la fonction de la tâche de départ. Dans l'ordre, on va donc :
+
+* récupérer le pointeur de pile
+* pour chaque tâche dans la tableau contexte, initialiser leur etat à `NCREE` car aucune tâche n'est créée au départ
+* initialiser la tâche courante à zéro : certains noyaux TR ont une tâche de fond mais ici il n'y en a pas... Ici, par défaut, la première tâche avec laquelle on active le noyau est positionnée en 0 des différents tableaux utilisés dans le code (_contexte, compteurs d'activations). De plus, quand on crée une tâche (voir la fonction `cree()` ci-dessous) l'identifiant généré `tache` commence bien à 0 puis est incrémenté de 1 à chaque nouvelle création.
+* initialisation de notre file avec la fonction `file_init()` créée précédemment
+* **TODO : comprendre les 5 lignes suivantes**
+* initialiser le timer chargé des changements de contexte **TODO : j'ai pas bien compris à quoi il servait en vrai, on dirait qu'il est branché à rien...**
+* finalement, on va créer et lancer la tâche de départ.
 
 
 ```c
@@ -230,7 +233,8 @@ uint16_t cree( TACHE_ADR adr_tache )
 }
 
 ```
-qui est bien la première valeur donnée lors du start avec la première tâche. Puis lors des créations des tâches suivantes on aura bien la variable static tache à jour qui sera à nouveau indentée (pour la seconde tâche, tache = 0 qui passe à 1 et est utilisée pour la création)
+
+`cree()` affecte un numéro à chaque tâche entre 0 (initilisation à -1 et ++) et MAX_TACHES. Si on essaie de créer plus de tâches que possible, le noyau se met en erreur (`noyau_exit()`). **TODO : comprendre ces histoires de piles** On enregistre évidement l'adresse à laquelle se trouve la fonction à réaliser par la tâches (`p->tache_adr`) et on met son statut à `CREE` (donc en attente d'activation, selon l'énoncé). Ces opérations sont bien sûr réalisées dans une section critique car une préemption entre `_lock_()` et `_unlock_()` laisserait le noyau dans un état instable.
 
 ```c
 void  active( uint16_t tache )
@@ -251,6 +255,8 @@ void  active( uint16_t tache )
 }
 
 ```
+
+`active()` prépare une tâche préalablement créée pour qu'elle puisse être ordonnancée, donc exécutée. En pratique, cette fonction passe le statut d'une tâche `CREE` à `PRET`, met la tâche dans la file et demande un ordonancement. Si la tâche n'a pas été créée (`NCREE`, la valeur d'initialisation des tâches du tableau `_contexte`), le noyau se met en défaut. **TODO: commentaire sur la section critique ?**
 
 
 ```c
@@ -273,14 +279,14 @@ void  schedule( void )
 {
   _lock_();                         /* Debut section critique */
 
-  /* On simule une exception irq pour forcer un appel correct � scheduler().*/
+  /* On simule une exception irq pour forcer un appel correct à scheduler().*/
   _ack_timer = 0;
   _set_arm_mode_(ARMMODE_IRQ);      /* Passer en mode IRQ */
   __asm__ __volatile__(
       "mrs  r0, cpsr\t\n"           /* Sauvegarder cpsr dans spsr */
       "msr  spsr, r0\t\n"
       "add  lr, pc, #4\t\n"         /* Sauvegarder pc dans lr et l'ajuster */
-      "b    scheduler\t\n"          /* Saut � scheduler */
+      "b    scheduler\t\n"          /* Saut à scheduler */
       );
   _set_arm_mode_(ARMMODE_SYS);      /* Repasser en mode system */
 
@@ -295,11 +301,11 @@ quand il n'y a plus de tâche courante à exécuter (_tache_courante = F_VIDE) e
 void  noyau_exit(void)
 {
   int j;
-  _irq_disable_();                /* D�sactiver les interruptions */
+  _irq_disable_();                /* Dàsactiver les interruptions */
   printf("Sortie du noyau\n");
   for (j=0; j < MAX_TACHES; j++)
     printf("\nActivations tache %d : %d", j, compteurs[j]);
-  for(;;);                        /* Terminer l'ex�cution */
+  for(;;);                        /* Terminer l'exàcution */
 }
 ```
 
