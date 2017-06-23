@@ -1,0 +1,29 @@
+Scheduling simulation, Processor component top.impl.cpu : 
+- Number of context switches :  73
+- Number of preemptions :  0
+
+- Thread component response time computed from simulation : 
+    top.impl.taches.t1 => 10/worst 
+    top.impl.taches.t2 => 7/worst ,  missed its deadline (absolute deadline =  10 ; completion time =  11),  missed its deadline (absolute deadline =  35 ; completion time =  37),  missed its deadline (absolute deadline =  65 ; completion time =  66),  missed its deadline (absolute deadline =  180 ; completion time =  182),  missed its deadline (absolute deadline =  210 ; completion time =  211),  missed its deadline (absolute deadline =  240 ; completion time =  241),  missed its deadline (absolute deadline =  270 ; completion time =  271)
+    top.impl.taches.t3 => 10/worst 
+- Some thread component deadlines will be missed : the thread component set is not schedulable.
+
+
+
+Scheduling feasibility, Processor component top.impl.cpu : 
+1) Feasibility test based on the processor utilization factor : 
+
+- The hyperperiod is 290 (see [18], page 5). 
+- 104 units of time are unused in the hyperperiod.
+- Processor utilization factor with deadline is 0.64138 (see [1], page 6). 
+- Processor utilization factor with period is 0.64138 (see [1], page 6). 
+- In the non preemptive case, with RM, we can not prove that thread components are schedulable because one or many thread components doesn't/don't satisfy the processor utilization factor feasibility test (see [3]).
+  List of concerned thread components : top.impl.taches.t2 top.impl.taches.t3 
+
+2) Feasibility test based on worst case thread component response time : 
+
+- Worst case thread component response time :  (see [1], page 36, equation 13). 
+    top.impl.taches.t1 => 10
+    top.impl.taches.t3 => 10
+    top.impl.taches.t2 => 7,  missed its deadline (deadline =  5)
+- Some thread component deadlines will be missed : the thread component set is not schedulable.

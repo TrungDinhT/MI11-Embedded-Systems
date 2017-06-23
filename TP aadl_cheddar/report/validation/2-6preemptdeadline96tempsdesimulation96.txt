@@ -1,0 +1,26 @@
+Scheduling simulation, Processor component top.impl.cpu : 
+- Number of context switches :  35
+- Number of preemptions :  6
+
+- Thread component response time computed from simulation : 
+    top.impl.taches.t1 => 7/worst 
+    top.impl.taches.t2 => 3/worst 
+    top.impl.taches.t3 => 23/worst 
+    top.impl.taches.ta1 => 17/worst 
+    top.impl.taches.ta2 => 84/worst 
+- No deadline missed in the computed scheduling : the thread component is schedulable if you computed the simulation on the hyperperiod.
+
+
+
+Scheduling feasibility, Processor component top.impl.cpu : 
+1) Feasibility test based on the processor utilization factor : 
+
+- The hyperperiod is 0 (see [18], page 5). 
+- Thread components must be periodic : can not compute hyperperiod with this thread component set. 
+- Thread components must be periodic : can not compute bound on processor utilization factor with period on this thread component set. 
+- Thread components must be periodic : can not compute bound on processor utilization factor with period on this thread component set. 
+- Task with non zero start time : can not compute processor utilization factor  with this task set.
+
+2) Feasibility test based on worst case thread component response time : 
+
+- Thread components must be periodic : can not compute bound on response time with this thread component set.

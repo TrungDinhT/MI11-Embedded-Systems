@@ -1,0 +1,31 @@
+Scheduling feasibility, Processor component health_monitor.impl.cpu_a : 
+1) Feasibility test based on the processor utilization factor : 
+
+- The hyperperiod is 15 (see [18], page 5). 
+- 0 units of time are unused in the hyperperiod.
+- Processor utilization factor with deadline is 1.46667 (see [1], page 6). 
+- Processor utilization factor with period is 1.46667 (see [1], page 6). 
+- In the preemptive case, with RM, we can not prove that the thread component set is schedulable because the processor utilization factor 1.46667 is more than 0.77976 (see [1], page 16, theorem 8). 
+
+
+2) Feasibility test based on worst case thread component response time : 
+
+- Processor utilization exceeded : can not compute bound on response time with this thread component set. 
+
+
+Scheduling feasibility, Processor component health_monitor.impl.cpu_b : 
+1) Feasibility test based on the processor utilization factor : 
+
+- The hyperperiod is 60 (see [18], page 5). 
+- 14 units of time are unused in the hyperperiod.
+- Processor utilization factor with deadline is 0.76667 (see [1], page 6). 
+- Processor utilization factor with period is 0.76667 (see [1], page 6). 
+- In the preemptive case, with RM, the thread component set is schedulable because the processor utilization factor 0.76667 is equal or less than 0.82843 (see [1], page 16, theorem 8). 
+
+
+2) Feasibility test based on worst case thread component response time : 
+
+- Worst case thread component response time :  (see [2], page 3, equation 4). 
+    health_monitor.impl.applib.getecg => 6
+    health_monitor.impl.applib.check => 4
+- All thread component deadlines will be met : the thread component set is schedulable.

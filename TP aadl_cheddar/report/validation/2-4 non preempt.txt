@@ -1,0 +1,29 @@
+Scheduling simulation, Processor component top.impl.cpu : 
+- Number of context switches :  6
+- Number of preemptions :  0
+
+- Thread component response time computed from simulation : 
+    top.impl.taches.t1 => 9/worst 
+    top.impl.taches.t2 => 5/worst 
+    top.impl.taches.t3 => 14/worst 
+- No deadline missed in the computed scheduling : the thread component is schedulable if you computed the simulation on the hyperperiod.
+
+
+
+Scheduling feasibility, Processor component top.impl.cpu : 
+1) Feasibility test based on the processor utilization factor : 
+
+- The hyperperiod is 24 (see [18], page 5). 
+- 1 units of time are unused in the hyperperiod.
+- Processor utilization factor with deadline is 0.95833 (see [1], page 6). 
+- Processor utilization factor with period is 0.95833 (see [1], page 6). 
+- In the non preemptive case, with EDF, the thread component set is not schedulable because one or many thread components doesn't/don't satisfy the processor utilization factor feasibility test (see [8]).
+  List of thread components not schedulable : top.impl.taches.t3 
+
+2) Feasibility test based on worst case thread component response time : 
+
+- Worst case thread component response time : 
+    top.impl.taches.t1 => 21,  missed its deadline (deadline =  12)
+    top.impl.taches.t2 => 5
+    top.impl.taches.t3 => 42,  missed its deadline (deadline =  24)
+- Some thread component deadlines will be missed : the thread component set is not schedulable.
