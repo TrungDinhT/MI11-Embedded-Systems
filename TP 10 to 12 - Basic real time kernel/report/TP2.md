@@ -36,7 +36,9 @@ void reveille(uint16_t t)
 	}	
 	_unlock_();
 }
- 
+```
+
+```c 
 void dort(void)
 {
 	CONTEXTE *p;
@@ -62,7 +64,6 @@ Notons également l'utilisation des primitives `_lock_()` et `_unlock_()` qui é
 
 
 On réalise maintenant un producteur et un consommateur selon les besoins définis dans le sujet :
-*Vous écrirez un petit programme de test mettant en œuvre ces deux primitives dans le cas du modèle de communications producteur/consommateur. Le programme devra comporter au moins deux tâches ; la première, le producteur, produira des entiers courts dans une file circulaire, la seconde, le consommateur, retirera ces entiers de la file et les affichera.*
 
 Le producteur va s'endormir si le nombre de places vides est nul et il va réveiller le consommateur s'il y a un seul élément dans la file. Le consommateur va s'endormir si le nombre places vides est égal à la taille de la file et va réveiller le producteur dès qu'il y a une case vide. Il peut donc y avoir les 2 tâches lancées en même temps mais elles ne peuvent pas être éteintes en même temps !
 
@@ -181,7 +182,7 @@ TACHE	producteur(void)
 ```
 
 ##### Le consommateur
-# TODO ajouter explication
+Cette fois-ci quand le consommateur s'aperçoit que la file est vide alors il réveille le producteur et s'endort.
 
 Voici la deuxième version du consomateur:
 ```c
@@ -473,9 +474,9 @@ Activations tache 5 : 0
 Activations tache 6 : 0
 Activations tache 7 : 0
  ```
- 
-  Avec les paramètres suivants:
- Le producteur est plus lent que le consommateur.
+
+Avec les paramètres suivants:
+Le producteur est plus lent que le consommateur.
 
 - 'PROD_WAIT    1000000'
 - 'CONS_WAIT    100000'
@@ -1132,6 +1133,8 @@ Les résultats mettent en évidence qu'aucun accès concurrent n'est permis, nou
  
 Avec 2 producteurs et 2 consommateurs :
 
+Finalement ce dernier exemple nous permet de valider la bonne construction et utilisation de nos sémaphores. On peut observer les différents consommateurs et producteurs accèder et modifier à la file partagée sans que celle-ci n'est de valeur erronée.
+
 ```
 Test noyau Semaphore
 ------> EXEC tache A
@@ -1384,6 +1387,4 @@ Activations tache 5 : 0
 Activations tache 6 : 0
 
 ```
-
-Finalement ce dernier exemple nous permet de valider la bonne construction et utilisation de nos sémaphores. On peut observer les différents consommateurs et producteurs accèder et modifier à la file partagée sans que celle-ci n'est de valeur erronée.
 

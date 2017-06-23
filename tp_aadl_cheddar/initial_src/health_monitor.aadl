@@ -1,0 +1,217 @@
+--
+-- Description de l'architecture d'un moniteur médical
+--
+-- Ce moniteur dispose de trois capteurs (SO2, ECG et PA), d'un affichage
+-- et d'une fonction alarme qui se déclenche lorsque l'un des paramètres
+-- descend en dessous d'un seuil déterminé
+--
+
+-----------------------
+-- Composants matériels
+-----------------------
+
+-- Bus
+
+-- Les capteurs sont sur bus CAN
+bus CAN
+end CAN;
+
+-- L'afficheur est sur bus LVDS
+bus LVDS
+end LVDS;
+
+
+-- Capteurs
+
+-- Capteur saturation O2
+device SO2_sensor
+  features
+    SO2 : out data port;
+    iobus : requires bus access CAN;
+end SO2_sensor;
+
+device implementation SO2_sensor.impl
+end SO2_sensor.impl;
+
+-- Capteur électrocardiogramme
+device ECG_sensor
+  features
+    ECG : out data port;
+    iobus : requires bus access CAN;
+end ECG_sensor;
+
+device implementation ECG_sensor.impl
+end ECG_sensor.impl;
+
+-- Capteur Pression artérielle
+device PA_sensor
+  features
+    PA : out data port;
+    iobus : requires bus access CAN;
+end PA_sensor;
+
+device implementation PA_sensor.impl
+end PA_sensor.impl;
+
+-- Autres périphériques
+device LCD_display
+  features
+    fb : in data port;					-- framebuffer
+    lvds : requires bus access LVDS;	-- lcd bus
+end LCD_display;
+  
+device Alarm
+  features
+    trigger : in event data port;
+    iobus : requires bus access CAN;
+end Alarm;
+
+-- Processeur
+processor armadeus
+  features
+    iobus : requires bus access CAN;
+    lvds : requires bus access LVDS;
+end armadeus;
+
+processor implementation armadeus.impl
+end armadeus.impl;
+
+-----------------------
+-- Composants logiciels
+-----------------------
+thread read_sensor
+  features
+    raw : in data port;
+    cooked : out data port;
+end read_sensor;
+
+thread implementation read_sensor.PA
+end read_sensor.PA;
+
+thread implementation read_sensor.ECG
+end read_sensor.ECG;
+
+thread implementation read_sensor.SO2
+end read_sensor.SO2;
+
+thread check_bounds
+  features
+    PA : in data port;
+    ECG : in data port;
+    SO2 : in data port;
+    alarm : out event data port;
+end check_bounds;
+
+thread implementation check_bounds.impl
+end check_bounds.impl;
+
+thread display
+  features
+    PA : in data port;
+    ECG : in data port;
+    SO2 : in data port;
+    fb : out data port;
+end display;
+
+thread implementation display.impl
+end display.impl;
+
+process health_monitoring
+  features
+    PA : in data port;
+    ECG : in data port;
+    SO2 : in data port;
+    fb : out data port;
+    alarm : out event data port;
+end health_monitoring;
+
+process implementation health_monitoring.impl
+  subcomponents
+    getPA : thread read_sensor.PA;
+    getSO2 : thread read_sensor.SO2;
+    getECG : thread read_sensor.ECG;
+    dpy : thread display.impl;
+    check : thread check_bounds.impl;
+  connections
+    data port PA -> getPA.raw;
+    data port ECG -> getECG.raw;
+    data port SO2 -> getSO2.raw;
+    data port getPA.cooked -> dpy.PA;
+    data port getPA.cooked -> check.PA;
+    data port getECG.cooked -> dpy.ECG;
+    data port getECG.cooked -> check.ECG;
+    data port getSO2.cooked -> dpy.SO2;
+    data port getSO2.cooked -> check.SO2;
+    data port dpy.fb -> fb;
+    event data port check.alarm -> alarm;
+end health_monitoring.impl;
+
+------------------
+-- système complet
+------------------
+system health_monitor
+end health_monitor;
+
+system implementation health_monitor.impl
+  subcomponents
+    -- Les bus
+    can : bus CAN;
+    lvds : bus LVDS;
+    
+    -- Les processeurs
+    cpu_a : processor armadeus.impl;
+    
+    -- Les capteurs
+    SO2_sense : device SO2_sensor;
+    PA_sense : device PA_sensor;
+    ECG_sense : device ECG_sensor;
+    
+    -- Les périphériques de sortie
+    lcd : device LCD_display;
+    alarm : device Alarm;
+    
+    -- L'application
+    appli : process health_monitoring.impl;
+    
+  connections
+    -- connexions de bus
+    bus access can -> SO2_sense.iobus;
+    bus access can -> PA_sense.iobus;
+    bus access can -> ECG_sense.iobus;
+    bus access can -> alarm.iobus;
+    bus access can -> cpu_a.iobus;
+       
+    bus access lvds -> lcd.lvds;
+    bus access lvds -> cpu_a.lvds;
+  
+    -- connexions de ports
+    so2_conn : data port SO2_sense.SO2 -> appli.SO2;
+    pa_conn : data port PA_sense.PA -> appli.PA;
+    ecg_conn : data port ECG_sense.ECG -> appli.ECG;
+    fb_conn : data port appli.fb -> lcd.fb;
+    alarm_conn : event data port appli.alarm -> alarm.trigger;
+    
+  properties
+    -- Allocation logiciel - plateforme d'exécution
+    Actual_Processor_Binding => reference cpu_a applies to appli;
+    
+    Actual_Connection_Binding => reference can applies to so2_conn;
+    Actual_Connection_Binding => reference can applies to pa_conn;
+    Actual_Connection_Binding => reference can applies to ecg_conn;
+    Actual_Connection_Binding => reference can applies to alarm_conn;
+    Actual_Connection_Binding => reference lvds applies to fb_conn;
+end health_monitor.impl;
+
+    
+    
+    
+
+
+
+
+
+
+
+
+
+
