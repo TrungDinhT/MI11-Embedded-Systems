@@ -9,31 +9,29 @@ Nous avons commencé le TP en ajoutant à Eclipse le plugin OSATE, puis en créa
 Pour les questions suivantes nous avons trois tâches périodiques se définissant ainsi:
 ![schema](./imgtacheRate.png)
 
-Rappel, Le critère d'ordonnancabilité en Rate Monotonic est :
-$$
-U = \sum_{i=1}^{n} \frac{C_i}{P_i} \leq n (2^{1/n} - 1) = 0.779 \mbox{ pour n=3}
-$$
+Rappel, le critère d'ordonnancabilité en Rate Monotonic est :
+![schema](./latex/1.png)
 
-Q1. 
-$$
-U = \frac{7}{29} + \frac{1}{5} + \frac{2}{10} = 0.641 \leq 0.779
-$$
+#### Q1. 
+![schema](./latex/2.png)
 Le résultat nous informe donc que l'ensemble des tâches est ordonnançable.
 
-Q2. Le critère de priorité est inversement proportionnelle à la période Pi. Plus la période est petite plus la tâche est prioritaire.
+#### Q2. 
+Le critère de priorité est inversement proportionnel à la période Pi. Plus la période est petite plus la tâche est prioritaire.
 Donc nous avons :
  - T2, priorité de 255
  - T3, priorité de 254
  - T1, priorité de 253
 
-Q3. On ajoute les paramètres suivants aux tâches:
+#### Q3. 
+On ajoute les paramètres suivants aux tâches:
   - "Period" 
   - "Compute_Execution_Time" 
   - "Deadline" 
   - "Cheddar_Properties::Dispatch_Absolute_Time" 
 
   et dans l'ordonnanceur nous ajoutons:
-  - "Preemtive_Scheduler => False or True" par défaut en non preemptable.
+  - "Preemtive_Scheduler => False or True" par défaut en non préemptable.
 
 Code après ajout des paramètres dans une tâche:
   ```aadl
@@ -56,7 +54,8 @@ processor implementation cpu.impl
 end cpu.impl;
 ```
 
-Q4. Ordonnancement preemptif:
+#### Q4. 
+Ordonnancement préemptif:
 ![schema](./validation/1-4preempt.PNG)
 Avec la sortie Cheddar suivante:
 ```
@@ -80,7 +79,7 @@ Scheduling feasibility, Processor component top.impl.cpu :
 
 ```
 
-Ordonnancement non preemptif:
+Ordonnancement non préemptif:
 ![schema](./validation/1-4nonpreempt.PNG)
 
 Avec la sortie Cheddar suivante:
@@ -105,23 +104,23 @@ Scheduling feasibility, Processor component top.impl.cpu :
 ```
 
 
-On constate que l'ordonnacement en non preemptif ne fonctionne pas, ce n'est pas schedulable. Ceci à cause de la première tâche (celle à la plus longue période) qui fait manquer les deadlines d'autres tâches.
+On constate que l'ordonnancement en non préemptif ne fonctionne pas, ce n'est pas schedulable. Ceci à cause de la première tâche (celle à la plus longue période) qui fait manquer les deadlines d'autres tâches.
 
 En ordonnancement rate monotonic, avec des tâches non harmoniques, il peut y avoir des moments où on ne peut rien faire, où les tâches sont obligées d'attendre ce qui fait que la période d'étude n'est pas pleinement occupée. Analysons alors le comportement de tâches harmoniques.
 
 
-Q5. Formons maintenant un jeu de tâche harmonique.
+#### Q5. 
+Formons maintenant un jeu de tâche harmonique.
 
 Par le calcul du critère d'ordonnançabilité, on trouve que les tâches ne sont pas ordonnançables:
-$$
-U = \frac{6}{30} + \frac{3}{5} + \frac{2}{10} = 1 > 0.779
-$$
 
-Preemptif:
+![schema](./latex/3.png)
+
+Préemptif:
 ![schema](./validation/1-5preempt.PNG)
 Pour ne pas surcharger le rapport à partir de maintenant nous n'afficherons que les parties des logs Cheddar qui nous intéresse, autrement dit le taux d'utilisation du processeur ainsi que les temps de réponse des tâches.
 
-Non preemptif:
+Non préemptif:
 ![schema](./validation/1-5nonpreempt.PNG)
 Avec la sortie Cheddar suivante:
 ```
@@ -136,12 +135,13 @@ Avec la sortie Cheddar suivante:
 - Some thread component deadlines will be missed : the thread component set is not schedulable.
 ```
 
-On constate que c'est encore pire quand question 4 si les tâches ne sont pas preemptables. Cela s'explique par le fait que les tâches sont censés occuper la totalité de la période d'étude (U = 1). Or si elle ne peuvent se preempter les unes les autres, certaines ne vont pas être terminer avant leur deadline.
+On constate que c'est encore pire quand question 4 si les tâches ne sont pas préemptables, en effet deux tâches manquent leur deadline cette fois-ci. Cela s'explique par le fait que les tâches sont censées occuper la totalité de la période d'étude (U = 1). Or si elle ne peuvent se préempter les unes les autres, certaines ne vont pas être terminées avant leur deadline.
 
-De plus on constate que si le test d'ordonnançabilité est vrai alors l'ordonnacement est possible mais l'inverse n'est pas forcément vrai (condition suffisante). En effet c'est bien le cas ici, nous avons un critère d'ordonnançabilité égale à 1 et donc supérieur à 0,78 mais Cheddar arrive tout de même à les ordonnancer. Il faut également prendre en compte les temps de réponse de chaque tâche pour savoir si elles sont réellement ordonnançable ou pas.
+De plus on constate que si le test d'ordonnançabilité est vrai alors l'ordonnancement est possible mais l'inverse n'est pas forcément vrai (condition suffisante). En effet c'est bien le cas ici, nous avons un critère d'ordonnançabilité égal à 1 et donc supérieur à 0,78 mais Cheddar arrive tout de même à les ordonnancer. Il faut également prendre en compte les temps de réponse de chaque tâche pour savoir si elles sont réellement ordonnançables ou pas.
 
 
-Q6. Voici les différents temps de réponse donnés par Cheddar:
+#### Q6. 
+Voici les différents temps de réponse donnés par Cheddar:
 
 ```
 - Worst case thread component response time : 
@@ -158,13 +158,12 @@ Vu les temps de réponse on voit qu'on respecte les deadlines alors qu'on a calc
 Nous avons maintenant trois nouvelles tâches périodiques, définies par:
 ![schema](./imgtacheEDF.png)
 
-Q1. 
-$$
-U = \frac{5}{12} + \frac{2}{6} + \frac{5}{24} = \frac{23}{24} < 1
-$$
+#### Q1. 
+![schema](./latex/4.png)
 Le jeu de tâche est donc ordonnançable !
 
-Q2. Voici le code de notre fichier test_edf.aadl:
+#### Q2. 
+Voici le code de notre fichier test_edf.aadl:
 ```aadl
 thread T1
 end T1;
@@ -235,10 +234,11 @@ end top.impl;
 
 ```
 
-Q3. Il y a une unité de temps libre sur la période d'étude. En effet on a une période de 24 unités et elle est utilisée pendant 23/24 de son temps donc il reste 1/24*24= 1 unité de temps.
+#### Q3. 
+Il y a une unité de temps libre sur la période d'étude. En effet on a une période de 24 unités et elle est utilisée pendant 23/24 de son temps donc il reste 1/24*24= 1 unité de temps.
 
-Q4. Voir schéma ordonnancement. et temps de réponse même.
-Preemptif:
+#### Q4. Voici les schémas d'ordonnancement:
+Préemptif:
 ![schema](./validation/2-4preempt.PNG)
 Avec le retour Cheddar suivant:
 ```
@@ -253,8 +253,8 @@ Avec le retour Cheddar suivant:
 - All thread component deadlines will be met : the thread component set is schedulable.
 ```
 
-Non preemptif:
-![schema](./valition/2-4nonpreempt.PNG)
+Non préemptif:
+![schema](./validation/2-4nonpreempt.PNG)
 Avec le retour Cheddar suivant:
 ```
 - The hyperperiod is 24. 
@@ -269,10 +269,11 @@ Avec le retour Cheddar suivant:
 
 ```
 
-Nous constatons bien l'unité de temps disponible sur le schéma en preemptif et qui est également confirmer par les logs Cheddar.
+Nous constatons bien l'unité de temps disponible sur le schéma en préemptif et qui est également confirmée par les logs Cheddar.
 
 
-Q5. Voici le bout de code ajouté pour les deux tâches apériodiques TA1 et TA2:
+#### Q5. 
+Voici le bout de code ajouté pour les deux tâches apériodiques TA1 et TA2:
 ```aadl
 thread TA1
 end TA1;
@@ -311,12 +312,12 @@ end taches.impl;
 ```
 
 
-Schéma d'ordonnancement pour le cas preemptif:
+Schéma d'ordonnancement pour le cas préemptif:
 ![schema](./validation/2-6preempt.PNG)
 
 on sait qu'il y a 1 unité de temps disponible par période d'étude, et la somme des temps d'exécution des deux tâches apériodiques est égale à 4 donc il faudra une deadline de 4*24= 96 pour avoir les tâches apériodiques qui s'éxécutent sans perturber les autres.
 
-Si on donne une deadline de 24 aux tâches apériodiques alors celles-ci vont mettre la tâche 3 en retard. Elle le rattrapera arrivé à 96 unité de temps, ce qui est logique (cf. paragraphe précédent). En fait, la TA2 prend 3 unité de temps dans la première période d'étude à la tâche 3 il faudra donc 3 période d'étude pour que la tâche 3 rattrape son retard (1 unité de temps reprise par période d'étude), ce qui fait bien 24 + 3*24 = 96.
+Si on donne une deadline de 24 aux tâches apériodiques alors celles-ci vont mettre la tâche 3 en retard. Elle le rattrapera arrivé à 96 unités de temps, ce qui est logique (cf. paragraphe précédent). En fait, la TA2 prend 3 unités de temps dans la première période d'étude à la tâche 3 il faudra donc 3 période d'étude pour que la tâche 3 rattrape son retard (1 unité de temps reprise par période d'étude), ce qui fait bien 24 + 3*24 = 96.
 
 Voici les répercussions sur l'ordonnancement en fonction de la valeur de deadline choisie:
 
@@ -335,16 +336,16 @@ Deadline de 96,
 
 ### Exercice 3 : Moniteur médical multiparamètres
 
-Q1.
+#### Q1.
 Voici les différents critères qui nous ont permis d'affecter les priorités aux tâches:
 
 - Criticité ou l'importance de la tâche, vaut il mieux déclencher cette tâche au lieu d'une autre ?
 
-- Plus important de Checker des que possible pour éventuellement déclencher l'alarme au lieu d'afficher par exemple.
+- Déclenchement de l'alarme ou changement de l'IHM par un vérification le plus tôt possible.
 
 - Vitesse d'évolution des paramètres mesurés par la tâche. 
 
-A ces critès quantitatifs s'ajoute également la période de la tâche.
+A ces critères quantitatifs s'ajoute également la période de la tâche.
 
 Au final nous avons les priorités suivantes :
 1- Check (255)
@@ -353,9 +354,10 @@ Au final nous avons les priorités suivantes :
 4- getSO2 (252)
 5- dpy (251)
 
-Nous supposons donc que l'affichage est le moins important, l'infirmière ne sera pas tout le temps derrière l'écran pour s'assurer des bons paramètres vitaux. Puis la saturation sanguine met du temps à se produire comparer à l'activité cardiaque. Et donc le plus important est le déclenchement de l'alarme par la tâche check qui a la priorité maximale.
+Nous supposons donc que l'affichage est le moins important, l'infirmière ne sera pas tout le temps derrière l'écran pour s'assurer des bons paramètres vitaux. On considère également que la saturation sanguine a une évolution plus lente que l'activité cardiaque. Et donc, le plus important est le déclenchement de l'alarme par la tâche check qui a la priorité maximale.
 
-Q2. Voici une partie de notre code pour le fichier health_monitor.aadl, mettant en évidence les modifications apportées:
+#### Q2. 
+Voici une partie de notre code pour le fichier health_monitor.aadl, mettant en évidence les modifications apportées:
 ```aadl
 ...
 ...
@@ -486,35 +488,32 @@ end health_monitoring.impl;
 
 
 
-Q3. Nous avons le schéma d'ordonnancement suivant,
+#### Q3. 
+Nous avons le schéma d'ordonnancement suivant,
 1ere partie:
 ![schema](./validation/3-2preempt.PNG)
 
 2eme partie:
 ![schema](./validation/3-2preempt(2).PNG)
 
-Seulement la tâche display qui rate ça deadline et seulement une fois par période d'étude, ce qui n'est pas très grave aux vus des arguments exposés à la question 1.
+Il n'y a que la tâche display qui rate sa deadline et seulement une fois par période d'étude, ce qui n'est pas très grave au vu des arguments exposés à la question 1.
 
 
-Q4. Pour augmenter les performances du système, les tâches sont réparties sur deux processeurs (cpu_a et cpu_b). Avec les paramètres suivants:
+#### Q4. 
+Pour augmenter les performances du système, les tâches sont réparties sur deux processeurs (cpu_a et cpu_b). Avec les paramètres suivants:
 ![schema](./imgtacheMedical.PNG)
 
 On a alors les critères d'ordonnançabilité suivant:
-$$
-U_{b1} = \frac{4}{6} + \frac{2}{20} = \frac{46}{60} < 1
-$$
-$$
-U_{a1} = \frac{2}{3} + \frac{2}{5} + \frac{2}{5} = \frac{22}{15} > 1
-$$
+
+![schema](./latex/5.png)
 mais on a aussi :
-$$
-U_{b1} + U_{a1} \simeq 2.233  > 2
-$$
+
+![schema](./latex/6.png)
 
 On se rend compte à ce moment là que la répartition des tâches sur les CPU n'est pas correcte. On se retrouve avec des taux d'utilisation trop grand.
 
 
-La tâche getPA n'arrive pas à s'éxécuter... en effet si on veut excéuter les trois tâches sur le processeur a, il faudrait 147% du processeur, ceci est évidemment impossible.
+La tâche getPA n'arrive pas à s'éxécuter... en effet si on veut excécuter les trois tâches sur le processeur a, il faudrait 147% du processeur, ceci est évidemment impossible.
 
 Schéma d'ordonnancement correspondant:
 ![schema](./validation/3-4.PNG)
@@ -554,21 +553,18 @@ Scheduling feasibility, Processor component health_monitor.impl.cpu_b :
 ```
 
 
-Q5. En regardant les périodes, on observe que getECG à la plus grande et dpy a la plus petite. Pour une période grande il n'y a pas besoin du cpu le plus rapide et inversement, pour une tâche à période courte il vaut mieux un cpu rapide. Nous échangeons donc les deux tâches de cpu, ce qui implique également de changer les capacité de chacune. On se retrouve alors avec les paramètres suivants:
+#### Q5. 
+En regardant les périodes, on observe que getECG à la plus grande et dpy a la plus petite. Pour une période grande il n'y a pas besoin du cpu le plus rapide, et inversement, pour une tâche à période courte il vaut mieux un cpu rapide. Nous échangeons donc les deux tâches de cpu, ce qui implique également de changer les capacités de chacune. On se retrouve alors avec les paramètres suivants:
 
 ![schema](./paramQ5.png)
 
 Calcul des critères d'ordonnançabilité:
-$$
-U_{b2} = \frac{4}{6} + \frac{1}{3} = 1
-$$
-$$
-U_{a2} = \frac{4}{20} + \frac{2}{5} + \frac{2}{5} = 1
-$$
 
-Les deux critères sont égaux à 1 ce qui est acceptable mais en réalité impossible car un processeur a besoin d'un minimum de pourcentage de cpu pour ses actions non compréssibles.
+![schema](./latex/7.png)
 
-Et attention il faut recalculer les priorités en fonction de la période (algo rate_Monotonic), ce qui nous donne l'ordre de priorités suivant:
+Les deux critères sont égaux à 1, ce qui est acceptable mais en réalité impossible car un processeur a besoin d'un minimum de pourcentage de cpu pour ses actions non compressibles.
+
+Et il faut faire attention à recalculer les priorités en fonction de la période (algo Rate Monotonic), ce qui nous donne l'ordre de priorités suivant:
 1- dpy (255)
 2- getPA (254)
 3- getSO2 (253)
@@ -577,7 +573,8 @@ Et attention il faut recalculer les priorités en fonction de la période (algo 
 
 
 
-Q6. Voici le code final, après avoir ajouté les modifications de la questions précédentes:
+#### Q6. 
+Voici le code final, après avoir ajouté les modifications de la question précédente:
 ```aadl
 
 --
